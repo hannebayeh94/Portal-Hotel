@@ -1,0 +1,134 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-chart-bar" style="color:#1f4d3a"></i> Reportes</h1>
+</div>
+
+<div class="tabs">
+  <a href="/admin/tarifas">Tarifas</a>
+  <a href="/admin/temporadas">Temporadas</a>
+  <a href="/admin/promociones">Promociones</a>
+  <a href="/admin/reportes" class="active">Reportes</a>
+  <a href="/admin/facturacion">Facturación</a>
+</div>
+
+<div class="card">
+  <form method="GET" class="flex gap-3 items-center" style="flex-wrap:wrap;">
+    <input type="date" name="desde" class="form-control" style="width:auto;" value="<%= desde %>">
+    <input type="date" name="hasta" class="form-control" style="width:auto;" value="<%= hasta %>">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-sync"></i> Actualizar</button>
+  </form>
+</div>
+
+<div class="grid-4">
+  <div class="stat-card">
+    <div class="icon" style="color:#1f4d3a"><i class="fas fa-dollar-sign"></i></div>
+    <div class="number">$<%= Number(ingresos.total).toLocaleString('es-CO') %></div>
+    <div class="label">Ingresos del Período</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon" style="color:#059669"><i class="fas fa-receipt"></i></div>
+    <div class="number"><%= ingresos.count %></div>
+    <div class="label">Facturas Emitidas</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon" style="color:#d97706"><i class="fas fa-percentage"></i></div>
+    <div class="number"><%= totalHab > 0 ? Math.round((ocupacion.ocupadas / totalHab) * 100) : 0 %>%</div>
+    <div class="label">Ocupación Actual</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon" style="color:#9333ea"><i class="fas fa-bed"></i></div>
+    <div class="number"><%= ocupacion.ocupadas %> / <%= totalHab %></div>
+    <div class="label">Habitaciones Ocupadas</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-chart-line"></i> Ingresos Mensuales</h3></div>
+    <div style="height:250px;">
+      <canvas id="chartIngresos"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Ocupación por Tipo</h3></div>
+    <div style="height:250px;">
+      <canvas id="chartOcupacion"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-list"></i> Reservas del Período</h3></div>
+  <div class="table-container">
+    <table>
+      <thead><tr><th>#</th><th>Huésped</th><th>Habitación</th><th>Entrada</th><th>Salida</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        <% if (reservasPeriodo && reservasPeriodo.length > 0) { %>
+          <% reservasPeriodo.forEach(function(r) { %>
+          <tr>
+            <td><%= r.id %></td>
+            <td><%= r.nombre %> <%= r.apellido %></td>
+            <td><%= r.hab_numero %> (<%= r.hab_tipo %>)</td>
+            <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
+            <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
+            <td>$<%= Number(r.precio_total).toLocaleString('es-CO') %></td>
+            <td>
+              <% if (r.estado === 'pendiente') { %><span class="badge badge-warning">Pendiente</span><% } %>
+              <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+              <% if (r.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
+              <% if (r.estado === 'checkout') { %><span class="badge badge-gray">Check-out</span><% } %>
+              <% if (r.estado === 'cancelada') { %><span class="badge badge-danger">Cancelada</span><% } %>
+            </td>
+            <td><a href="/reservas/<%= r.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a></td>
+          </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="8" class="text-center text-muted">No hay reservas en este período</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+<% if (ingresosPorMes && ingresosPorMes.length > 0) { %>
+new Chart(document.getElementById('chartIngresos'), {
+  type: 'bar',
+  data: {
+    labels: [<% ingresosPorMes.reverse().forEach(function(m) { %>'<%= m.mes %>',<% }) %>],
+    datasets: [{
+      label: 'Ingresos ($)',
+      data: [<% ingresosPorMes.reverse().forEach(function(m) { %><%= m.total %>,<% }) %>],
+      backgroundColor: '#1f4d3a',
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: function(v) { return '$' + v.toLocaleString('es-CO'); } } } }
+  }
+});
+<% } %>
+<% if (ocupacionPorTipo && ocupacionPorTipo.length > 0) { %>
+new Chart(document.getElementById('chartOcupacion'), {
+  type: 'doughnut',
+  data: {
+    labels: [<% ocupacionPorTipo.forEach(function(t) { %>'<%= t.tipo.charAt(0).toUpperCase() + t.tipo.slice(1) %>',<% }) %>],
+    datasets: [{
+      data: [<% ocupacionPorTipo.forEach(function(t) { %><%= t.ocupadas %>,<% }) %>],
+      backgroundColor: ['#1f4d3a','#059669','#d97706','#9333ea','#dc2626']
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' }
+    }
+  }
+});
+<% } %>
+</script>
+<%- include('../partials/footer') %>

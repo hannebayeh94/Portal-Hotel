@@ -1,0 +1,70 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-bed" style="color:#1f4d3a"></i> Habitación <%= habitacion.numero %></h1>
+  <div class="flex gap-2">
+    <a href="/habitaciones/<%= habitacion.id %>/editar" class="btn btn-primary"><i class="fas fa-edit"></i> Editar</a>
+    <form method="POST" action="/habitaciones/<%= habitacion.id %>/eliminar" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar esta habitación? Esta acción no se puede deshacer.')">
+      <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Eliminar</button>
+    </form>
+    <a href="/habitaciones" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+  </div>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-info-circle"></i> Datos de la Habitación</h3></div>
+    <table>
+      <tr><td style="font-weight:600; width:180px;">Número</td><td><%= habitacion.numero %></td></tr>
+      <tr><td style="font-weight:600;">Tipo</td><td><span class="badge badge-info"><%= habitacion.tipo.charAt(0).toUpperCase() + habitacion.tipo.slice(1) %></span></td></tr>
+      <tr><td style="font-weight:600;">Precio Base</td><td><strong style="color:#1f4d3a;">$<%= Number(habitacion.precio_base).toLocaleString('es-CO') %></strong> / noche</td></tr>
+      <tr><td style="font-weight:600;">Capacidad</td><td><%= habitacion.capacidad %> personas</td></tr>
+      <tr><td style="font-weight:600;">Estado</td><td>
+        <span class="badge <%= habitacion.estado === 'disponible' ? 'badge-success' : habitacion.estado === 'ocupado' ? 'badge-danger' : habitacion.estado === 'reservada' ? 'badge-warning' : 'badge-gray' %>">
+          <%= habitacion.estado.charAt(0).toUpperCase() + habitacion.estado.slice(1) %>
+        </span>
+      </td></tr>
+      <tr><td style="font-weight:600;">Descripción</td><td><%= habitacion.descripcion || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Servicios</td><td>
+        <% if (habitacion.servicios) { %>
+          <% JSON.parse(habitacion.servicios).forEach(function(s) { %>
+            <span class="badge badge-info" style="margin:2px;"><%= s %></span>
+          <% }) %>
+        <% } else { %>-<% } %>
+      </td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-calendar-check"></i> Reservas Relacionadas</h3></div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>#</th><th>Huésped</th><th>Entrada</th><th>Salida</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          <% if (reservas && reservas.length > 0) { %>
+            <% reservas.forEach(function(r) { %>
+            <tr>
+              <td><%= r.id %></td>
+              <td><%= r.nombre %> <%= r.apellido %></td>
+              <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
+              <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
+              <td>
+                <% if (r.estado === 'pendiente') { %><span class="badge badge-warning">Pendiente</span><% } %>
+                <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+                <% if (r.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
+                <% if (r.estado === 'checkout') { %><span class="badge badge-gray">Check-out</span><% } %>
+                <% if (r.estado === 'cancelada') { %><span class="badge badge-danger">Cancelada</span><% } %>
+              </td>
+              <td><a href="/reservas/<%= r.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a></td>
+            </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="6" class="text-center text-muted">Sin reservas</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

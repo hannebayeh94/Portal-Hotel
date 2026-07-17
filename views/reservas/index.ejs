@@ -1,0 +1,91 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-calendar-check" style="color:#1f4d3a"></i> Reservas</h1>
+  <div class="flex gap-2">
+    <a href="/reservas/nueva" class="btn btn-success" style="background:#059669; font-weight:700;"><i class="fas fa-key"></i> Check-in Rápido</a>
+    <a href="/reservas/nueva?rapido=0" class="btn btn-outline"><i class="fas fa-plus-circle"></i> Reserva para otra fecha</a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="GET" class="flex gap-3 items-center" style="flex-wrap:wrap; margin-bottom:1rem;">
+    <select name="estado" class="form-control" style="width:auto; min-width:140px;">
+      <option value="">Todos los estados</option>
+      <option value="pendiente" <%= filtros.estado === 'pendiente' ? 'selected' : '' %>>Pendiente</option>
+      <option value="confirmada" <%= filtros.estado === 'confirmada' ? 'selected' : '' %>>Confirmada</option>
+      <option value="checkin" <%= filtros.estado === 'checkin' ? 'selected' : '' %>>Check-in</option>
+      <option value="checkout" <%= filtros.estado === 'checkout' ? 'selected' : '' %>>Check-out</option>
+      <option value="cancelada" <%= filtros.estado === 'cancelada' ? 'selected' : '' %>>Cancelada</option>
+    </select>
+    <input type="date" name="fecha_desde" class="form-control" style="width:auto;" value="<%= filtros.fecha_desde || '' %>">
+    <input type="date" name="fecha_hasta" class="form-control" style="width:auto;" value="<%= filtros.fecha_hasta || '' %>">
+    <input type="text" name="huesped" class="form-control" style="width:auto; min-width:180px;" placeholder="Buscar huésped..." value="<%= filtros.huesped || '' %>">
+    <select name="pago" class="form-control" style="width:auto; min-width:140px;">
+      <option value="">Cualquier pago</option>
+      <option value="pagado" <%= filtros.pago === 'pagado' ? 'selected' : '' %>>Pagado</option>
+      <option value="pendiente" <%= filtros.pago === 'pendiente' ? 'selected' : '' %>>Pendiente de pago</option>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filtrar</button>
+    <a href="/reservas" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Huésped</th>
+          <th>Cédula</th>
+          <th>Habitación</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th>Noches</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Pago</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (reservas && reservas.length > 0) { %>
+          <% reservas.forEach(function(r) { %>
+          <tr>
+            <td><%= r.id %></td>
+            <td><strong><%= r.nombre %> <%= r.apellido %></strong></td>
+            <td><%= r.numero_cedula %></td>
+            <td><%= r.hab_numero %> <span class="badge badge-info text-xs"><%= r.hab_tipo %></span></td>
+            <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
+            <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
+            <td><%= Math.ceil((new Date(r.fecha_salida) - new Date(r.fecha_entrada)) / (1000*60*60*24)) %></td>
+            <td><strong>$<%= Number(r.precio_total).toLocaleString('es-CO') %></strong></td>
+            <td>
+              <% if (r.estado === 'pendiente') { %><span class="badge badge-warning">Pendiente</span><% } %>
+              <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+              <% if (r.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
+              <% if (r.estado === 'checkout') { %><span class="badge badge-gray">Check-out</span><% } %>
+              <% if (r.estado === 'cancelada') { %><span class="badge badge-danger">Cancelada</span><% } %>
+            </td>
+            <td>
+              <% if (r.estado === 'cancelada') { %>
+                <span class="badge badge-gray">-</span>
+              <% } else { %>
+                <form method="POST" action="/reservas/<%= r.id %>/pago" style="display:inline;">
+                  <button type="submit" class="badge <%= r.pagado ? 'badge-success' : 'badge-warning' %>" style="border:none; cursor:pointer;">
+                    <i class="fas <%= r.pagado ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= r.pagado ? 'Pagado' : 'Pendiente' %>
+                  </button>
+                </form>
+              <% } %>
+            </td>
+            <td><a href="/reservas/<%= r.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a></td>
+          </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="11" class="text-center text-muted">No hay reservas</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

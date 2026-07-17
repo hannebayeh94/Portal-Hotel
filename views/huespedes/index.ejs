@@ -1,0 +1,59 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-users" style="color:#1f4d3a"></i> Huéspedes</h1>
+  <a href="/huespedes/nuevo" class="btn btn-primary"><i class="fas fa-user-plus"></i> Nuevo Huésped</a>
+</div>
+
+<div class="card">
+  <form method="GET" class="search-box" style="margin-bottom:1rem;">
+    <input type="text" name="search" placeholder="Buscar por nombre, apellido o cédula..." value="<%= search %>">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Buscar</button>
+    <% if (search) { %><a href="/huespedes" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a><% } %>
+  </form>
+  <div style="font-size:0.85rem; color:#888; margin-bottom:0.75rem;"><%= total %> huésped(es) encontrado(s)</div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre Completo</th>
+          <th>Cédula</th>
+          <th>Email</th>
+          <th>Teléfono</th>
+          <th>Registro</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (huespedes && huespedes.length > 0) { %>
+          <% huespedes.forEach(function(h, i) { %>
+          <tr>
+            <td><%= (page - 1) * 20 + i + 1 %></td>
+            <td><strong><%= h.nombre %> <%= h.apellido %></strong></td>
+            <td><%= h.numero_cedula %></td>
+            <td><%= h.email || '-' %></td>
+            <td><%= h.telefono || '-' %></td>
+            <td class="text-sm text-muted"><%= new Date(h.created_at).toLocaleDateString('es-CO') %></td>
+            <td>
+              <a href="/huespedes/<%= h.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
+              <a href="/huespedes/<%= h.id %>/editar" class="btn btn-sm btn-outline"><i class="fas fa-edit"></i></a>
+            </td>
+          </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="7" class="text-center text-muted">No hay huéspedes registrados</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% if (totalPages > 1) { %>
+  <div class="pagination">
+    <% if (page > 1) { %><a href="?page=<%= page - 1 %><%= search ? '&search=' + search : '' %>"><i class="fas fa-chevron-left"></i></a><% } %>
+    <% for (let p = 1; p <= totalPages; p++) { %>
+      <a href="?page=<%= p %><%= search ? '&search=' + search : '' %>" <%= p === page ? 'class="active"' : '' %>><%= p %></a>
+    <% } %>
+    <% if (page < totalPages) { %><a href="?page=<%= page + 1 %><%= search ? '&search=' + search : '' %>"><i class="fas fa-chevron-right"></i></a><% } %>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

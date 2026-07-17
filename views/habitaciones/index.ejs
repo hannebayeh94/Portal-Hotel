@@ -1,0 +1,58 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-bed" style="color:#1f4d3a"></i> Habitaciones</h1>
+  <a href="/habitaciones/nueva" class="btn btn-primary"><i class="fas fa-plus-square"></i> Nueva Habitación</a>
+</div>
+
+<div class="card">
+  <form method="GET" class="flex gap-3 items-center" style="flex-wrap:wrap; margin-bottom:1rem;">
+    <select name="tipo" class="form-control" style="width:auto; min-width:150px;">
+      <option value="">Todos los tipos</option>
+      <% tipos.forEach(function(t) { %>
+        <option value="<%= t.tipo %>" <%= filtros.tipo === t.tipo ? 'selected' : '' %>><%= t.tipo.charAt(0).toUpperCase() + t.tipo.slice(1) %></option>
+      <% }) %>
+    </select>
+    <select name="estado" class="form-control" style="width:auto; min-width:150px;">
+      <option value="">Todos los estados</option>
+      <option value="disponible" <%= filtros.estado === 'disponible' ? 'selected' : '' %>>Disponible</option>
+      <option value="ocupado" <%= filtros.estado === 'ocupado' ? 'selected' : '' %>>Ocupado</option>
+      <option value="mantenimiento" <%= filtros.estado === 'mantenimiento' ? 'selected' : '' %>>Mantenimiento</option>
+      <option value="reservada" <%= filtros.estado === 'reservada' ? 'selected' : '' %>>Reservada</option>
+    </select>
+    <input type="number" name="precio_min" class="form-control" style="width:auto; min-width:120px;" placeholder="Precio min" value="<%= filtros.precio_min || '' %>">
+    <input type="number" name="precio_max" class="form-control" style="width:auto; min-width:120px;" placeholder="Precio max" value="<%= filtros.precio_max || '' %>">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filtrar</button>
+    <a href="/habitaciones" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
+  </form>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1rem;">
+  <% if (habitaciones && habitaciones.length > 0) { %>
+    <% habitaciones.forEach(function(h) { %>
+    <a href="/habitaciones/<%= h.id %>" style="text-decoration:none; color:inherit;">
+      <div class="card" style="cursor:pointer; transition: all 0.2s; border-left: 4px solid <%= h.estado === 'disponible' ? '#059669' : h.estado === 'ocupado' ? '#dc2626' : h.estado === 'reservada' ? '#d97706' : '#888' %>;">
+        <div style="display:flex; justify-content:space-between; align-items:start;">
+          <div>
+            <h3 style="font-size:1.2rem; font-weight:700;">Habitación <%= h.numero %></h3>
+            <span class="badge <%= h.tipo === 'suite' || h.tipo === 'presidencial' ? 'badge-warning' : 'badge-info' %>"><%= h.tipo.charAt(0).toUpperCase() + h.tipo.slice(1) %></span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.3rem; font-weight:700; color:#1f4d3a;">$<%= Number(h.precio_base).toLocaleString('es-CO') %></div>
+            <div class="text-sm text-muted">por noche</div>
+          </div>
+        </div>
+        <div style="margin-top:0.75rem; display:flex; gap:1rem; font-size:0.85rem; color:#666;">
+          <span><i class="fas fa-users"></i> <%= h.capacidad %> personas</span>
+          <span class="badge <%= h.estado === 'disponible' ? 'badge-success' : h.estado === 'ocupado' ? 'badge-danger' : h.estado === 'reservada' ? 'badge-warning' : 'badge-gray' %>">
+            <%= h.estado.charAt(0).toUpperCase() + h.estado.slice(1) %>
+          </span>
+        </div>
+        <% if (h.descripcion) { %><p class="text-sm text-muted" style="margin-top:0.5rem;"><%= h.descripcion %></p><% } %>
+      </div>
+    </a>
+    <% }) %>
+  <% } else { %>
+    <div class="card text-center text-muted" style="grid-column:1/-1;">No hay habitaciones registradas</div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

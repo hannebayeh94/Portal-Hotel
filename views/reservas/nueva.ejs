@@ -1,0 +1,229 @@
+<%- include('../partials/header') %>
+<%
+const _hoyDate = new Date();
+const _mananaDate = new Date(_hoyDate.getTime() + 24*60*60*1000);
+const hoy = _hoyDate.toISOString().split('T')[0];
+const manana = _mananaDate.toISOString().split('T')[0];
+%>
+<div class="topbar">
+  <h1><i class="fas fa-plus-circle" style="color:#059669"></i> Nueva Reserva</h1>
+  <a href="/reservas" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card">
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div><% } %>
+
+  <form method="POST" action="/reservas/nueva" id="formReserva">
+    <div class="grid-2">
+      <div class="card" style="box-shadow:none; border:1px solid #e0e0e0; padding:1.25rem;">
+        <h3 style="margin-bottom:1rem;"><i class="fas fa-user"></i> Huésped</h3>
+        <div class="form-group" style="position:relative;">
+          <label>Buscar Huésped * <span class="text-muted text-xs">(nombre, apellido o cédula)</span></label>
+          <input type="text" id="buscarHuesped" class="form-control" autocomplete="off" placeholder="Escriba para buscar..."
+            value="<% const hSel = reserva && reserva.huesped_id ? huespedes.find(function(h){ return h.id == reserva.huesped_id; }) : null; %><%= hSel ? hSel.nombre + ' ' + hSel.apellido + ' - ' + hSel.numero_cedula : '' %>">
+          <input type="hidden" name="huesped_id" id="huespedId" value="<%= reserva ? reserva.huesped_id || '' : '' %>" required>
+          <div id="resultadosHuesped" style="display:none; position:absolute; z-index:20; background:#fff; border:1px solid #d0d0d0; border-radius:8px; width:100%; max-height:260px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.1);"></div>
+        </div>
+        <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #f0f0f0;">
+          <a href="/huespedes/nuevo" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-user-plus"></i> Nuevo Huésped</a>
+          <span class="text-sm text-muted" style="margin-left:0.5rem;">(se abre en nueva pestaña)</span>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none; border:1px solid #e0e0e0; padding:1.25rem;">
+        <h3 style="margin-bottom:1rem;"><i class="fas fa-calendar"></i> Fechas</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Fecha de Entrada *</label>
+            <input type="date" name="fecha_entrada" class="form-control" id="fechaEntrada" value="<%= reserva ? reserva.fecha_entrada : (rapido ? hoy : '') %>" required onchange="buscarDisponibles()">
+          </div>
+          <div class="form-group">
+            <label>Fecha de Salida *</label>
+            <input type="date" name="fecha_salida" class="form-control" id="fechaSalida" value="<%= reserva ? reserva.fecha_salida : (rapido ? manana : '') %>" required onchange="buscarDisponibles()">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Adultos</label>
+            <input type="number" name="adultos" class="form-control" min="1" value="<%= reserva ? reserva.adultos : '1' %>">
+          </div>
+          <div class="form-group">
+            <label>Niños</label>
+            <input type="number" name="ninos" class="form-control" min="0" value="<%= reserva ? reserva.ninos : '0' %>">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="box-shadow:none; border:1px solid #e0e0e0; padding:1.25rem; margin-top:1rem;">
+      <h3 style="margin-bottom:1rem;"><i class="fas fa-bed"></i> Habitación</h3>
+      <div class="grid-3">
+        <div class="form-group">
+          <label>Tipo de Habitación</label>
+          <select class="form-control" id="filtroTipo" onchange="buscarDisponibles()">
+            <option value="">Todos los tipos</option>
+            <option value="individual">Individual</option>
+            <option value="doble">Doble</option>
+            <option value="suite">Suite</option>
+            <option value="familiar">Familiar</option>
+            <option value="presidencial">Presidencial</option>
+          </select>
+        </div>
+      </div>
+      <div id="habitacionesDisponibles" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <div class="text-muted text-sm">Seleccione las fechas para ver disponibilidad</div>
+      </div>
+      <input type="hidden" name="habitacion_id" id="habitacionSeleccionada" value="<%= reserva ? reserva.habitacion_id : '' %>">
+    </div>
+
+    <div class="card" style="box-shadow:none; border:1px solid #e0e0e0; padding:1.25rem; margin-top:1rem;">
+      <div class="grid-2">
+        <div class="form-group">
+          <label><i class="fas fa-percent"></i> Promoción</label>
+          <select name="promocion_id" class="form-control">
+            <option value="">Sin promoción</option>
+            <% promociones.forEach(function(p) { %>
+              <option value="<%= p.id %>" <%= reserva && reserva.promocion_id == p.id ? 'selected' : '' %>><%= p.nombre %> (<%= p.descuento %>% desc)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-sticky-note"></i> Notas</label>
+          <textarea name="notas" class="form-control" rows="2"><%= reserva ? reserva.notas : '' %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="box-shadow:none; border:1px solid #e0e0e0; padding:1.25rem; margin-top:1rem; background:#f0fdf4;">
+      <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; font-weight:600;">
+        <input type="checkbox" name="checkin_inmediato" id="checkinInmediato" value="1" style="width:1.2rem; height:1.2rem;" <%= rapido ? 'checked' : '' %> onchange="actualizarBotonSubmit()">
+        <i class="fas fa-key"></i> Ocupar la habitación ahora (check-in inmediato)
+      </label>
+      <p class="text-sm text-muted" style="margin:0.35rem 0 0 1.9rem;">Marca la reserva como check-in y la habitación como ocupada en un solo paso. Desmarque esta opción si es una reserva para otra fecha.</p>
+    </div>
+
+    <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+      <button type="submit" id="btnSubmitReserva" class="btn btn-success" style="padding:0.75rem 2rem; font-size:1rem;"><i class="fas <%= rapido ? 'fa-key' : 'fa-check-circle' %>"></i> <%= rapido ? 'Ocupar Habitación Ahora' : 'Confirmar Reserva' %></button>
+      <a href="/reservas" class="btn btn-outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function buscarDisponibles() {
+  const entrada = document.getElementById('fechaEntrada').value;
+  const salida = document.getElementById('fechaSalida').value;
+  const tipo = document.getElementById('filtroTipo').value;
+  const container = document.getElementById('habitacionesDisponibles');
+
+  if (!entrada || !salida) {
+    container.innerHTML = '<div class="text-muted text-sm">Seleccione las fechas para ver disponibilidad</div>';
+    return;
+  }
+
+  let url = '/api/habitaciones-disponibles?fecha_entrada=' + entrada + '&fecha_salida=' + salida;
+  if (tipo) url += '&tipo=' + tipo;
+
+  container.innerHTML = '<div class="text-center" style="grid-column:1/-1;"><span class="spinner"></span> <span class="text-muted">Buscando habitaciones...</span></div>';
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (data.length === 0) {
+        container.innerHTML = '<div class="text-muted text-sm" style="grid-column:1/-1;">No hay habitaciones disponibles para esas fechas</div>';
+        return;
+      }
+      container.innerHTML = '';
+      data.forEach(function(h) {
+        const div = document.createElement('div');
+        const servicios = JSON.parse(h.servicios || '[]');
+        div.className = 'card';
+        div.style.cssText = 'cursor:pointer; padding:1rem; border:2px solid #e0e0e0; transition:all 0.2s;';
+        div.onclick = function() { seleccionarHabitacion(h.id, div); };
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between;">
+            <div><strong>Hab ${h.numero}</strong> <span class="badge badge-info">${h.tipo.charAt(0).toUpperCase() + h.tipo.slice(1)}</span></div>
+            <div style="color:#1f4d3a; font-weight:700;">$${Number(h.precio_base).toLocaleString('es-CO')}</div>
+          </div>
+          <div class="text-sm text-muted" style="margin-top:0.5rem;">${h.capacidad} personas ${servicios.length > 0 ? '| ' + servicios.slice(0,3).join(', ') : ''}</div>
+        `;
+        container.appendChild(div);
+      });
+    })
+    .catch(err => {
+      container.innerHTML = '<div class="text-danger">Error al buscar disponibilidad</div>';
+    });
+}
+
+function seleccionarHabitacion(id, el) {
+  document.querySelectorAll('#habitacionesDisponibles .card').forEach(function(c) {
+    c.style.borderColor = '#e0e0e0';
+    c.style.background = '#fff';
+  });
+  el.style.borderColor = '#1f4d3a';
+  el.style.background = '#f0f7ff';
+  document.getElementById('habitacionSeleccionada').value = id;
+}
+
+function actualizarBotonSubmit() {
+  const btn = document.getElementById('btnSubmitReserva');
+  if (document.getElementById('checkinInmediato').checked) {
+    btn.innerHTML = '<i class="fas fa-key"></i> Ocupar Habitación Ahora';
+  } else {
+    btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Reserva';
+  }
+}
+
+let busquedaHuespedTimeout = null;
+const inputBuscarHuesped = document.getElementById('buscarHuesped');
+const resultadosHuesped = document.getElementById('resultadosHuesped');
+
+inputBuscarHuesped.addEventListener('input', function() {
+  document.getElementById('huespedId').value = '';
+  const q = inputBuscarHuesped.value.trim();
+  clearTimeout(busquedaHuespedTimeout);
+  if (q.length < 3) {
+    resultadosHuesped.style.display = 'none';
+    return;
+  }
+  busquedaHuespedTimeout = setTimeout(function() {
+    fetch('/api/buscar-huesped', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: q })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.length === 0) {
+          resultadosHuesped.innerHTML = '<div style="padding:0.6rem 0.9rem; color:#888; font-size:0.85rem;">Sin resultados. <a href="/huespedes/nuevo" target="_blank">Crear nuevo huésped</a></div>';
+        } else {
+          resultadosHuesped.innerHTML = data.map(function(h) {
+            return '<div class="resultado-huesped" data-id="' + h.id + '" data-nombre="' + (h.nombre + ' ' + h.apellido + ' - ' + h.numero_cedula).replace(/"/g, '&quot;') + '" ' +
+              'style="padding:0.6rem 0.9rem; cursor:pointer; border-bottom:1px solid #f0f0f0;">' +
+              '<strong>' + h.nombre + ' ' + h.apellido + '</strong> <span class="text-muted text-sm">' + h.numero_cedula + '</span></div>';
+          }).join('');
+        }
+        resultadosHuesped.style.display = 'block';
+      });
+  }, 250);
+});
+
+resultadosHuesped.addEventListener('click', function(e) {
+  const item = e.target.closest('.resultado-huesped');
+  if (!item) return;
+  document.getElementById('huespedId').value = item.dataset.id;
+  inputBuscarHuesped.value = item.dataset.nombre;
+  resultadosHuesped.style.display = 'none';
+});
+
+document.addEventListener('click', function(e) {
+  if (e.target !== inputBuscarHuesped && !resultadosHuesped.contains(e.target)) {
+    resultadosHuesped.style.display = 'none';
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  buscarDisponibles();
+});
+</script>
+<%- include('../partials/footer') %>

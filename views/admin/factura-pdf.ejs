@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Factura #<%= factura.id %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @page { margin: 2cm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+    body { padding: 2rem; max-width: 800px; margin: 0 auto; color: #27272f; background: #fafafa; }
+    .sheet { background: #fff; padding: 2.5rem; border-radius: 18px; box-shadow: 0 1px 3px rgba(20,20,40,0.06); }
+    .header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ececf2; }
+    .header .hotel { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; color: #16161f; display: flex; align-items: center; gap: 0.6rem; }
+    .header .hotel .mark { width: 34px; height: 34px; border-radius: 9px; background: #1f4d3a; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.95rem; }
+    .header .hotel span { color: #1f4d3a; }
+    .header .factura-num { text-align: right; }
+    .header .factura-num h2 { font-family: 'Fraunces', serif; font-size: 1.5rem; color: #1f4d3a; letter-spacing: 0.04em; }
+    .header .factura-num p { color: #8a8a99; font-size: 0.87rem; margin-top: 0.15rem; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+    .info-box { background: #f7f7fb; padding: 1.1rem; border-radius: 12px; border: 1px solid #ececf2; }
+    .info-box h4 { font-size: 0.72rem; color: #8a8a99; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .info-box p { font-size: 0.92rem; line-height: 1.55; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; font-variant-numeric: tabular-nums; }
+    table th { background: #16161f; color: #fff; padding: 0.75rem 1rem; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    table th:first-child { border-radius: 8px 0 0 8px; }
+    table th:last-child { border-radius: 0 8px 8px 0; }
+    table td { padding: 0.8rem 1rem; border-bottom: 1px solid #ececf2; font-size: 0.9rem; }
+    table tr:last-child td { border-bottom: none; }
+    .totals { margin-left: auto; width: 300px; }
+    .totals table { margin-bottom: 0; }
+    .totals table td { padding: 0.55rem 1rem; border-bottom: 1px solid #ececf2; }
+    .totals table tr:last-child td { font-size: 1.25rem; font-weight: 800; color: #1f4d3a; border-top: 2px solid #16161f; padding-top: 0.85rem; }
+    .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #ececf2; text-align: center; font-size: 0.83rem; color: #8a8a99; }
+    .badge { display: inline-block; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #d1fae5; color: #065f46; }
+    .print-btn { position: fixed; top: 1.25rem; right: 1.25rem; padding: 0.65rem 1.3rem; background: #1f4d3a; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    @media print { .print-btn { display: none; } body { background: #fff; } .sheet { box-shadow: none; padding: 0; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
+
+  <div class="sheet">
+  <div class="header">
+    <div>
+      <div class="hotel"><div class="mark"><i class="fas fa-hotel"></i></div> Hotel<span>Admin</span></div>
+      <p style="color:#8a8a99; margin-top:0.5rem;">NIT: 900.123.456-7</p>
+      <p style="color:#8a8a99;">Calle 123 # 45-67, Bogotá, Colombia</p>
+      <p style="color:#8a8a99;">Tel: (601) 234 5678 - info@hoteladmin.com</p>
+    </div>
+    <div class="factura-num">
+      <h2>FACTURA</h2>
+      <p>No. <%= String(factura.id).padStart(6, '0') %></p>
+      <p><%= new Date(factura.fecha_emision).toLocaleString('es-CO') %></p>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <h4>Datos del Huésped</h4>
+      <p><strong><%= factura.nombre %> <%= factura.apellido %></strong></p>
+      <p>C.C. <%= factura.numero_cedula %></p>
+      <% if (factura.direccion) { %><p><%= factura.direccion %></p><% } %>
+      <% if (factura.email) { %><p><%= factura.email %></p><% } %>
+    </div>
+    <div class="info-box">
+      <h4>Datos de la Estancia</h4>
+      <p><strong>Habitación <%= factura.hab_numero %></strong> (<%= factura.hab_tipo %>)</p>
+      <p>Entrada: <%= new Date(factura.fecha_entrada).toLocaleDateString('es-CO') %></p>
+      <p>Salida: <%= new Date(factura.fecha_salida).toLocaleDateString('es-CO') %></p>
+      <p>Huéspedes: <%= factura.adultos %> adulto(s)<% if (factura.ninos && factura.ninos > 0) { %>, <%= factura.ninos %> niño(s)<% } %></p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Cant.</th>
+        <th>Precio Unit.</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Alojamiento - Habitación <%= factura.hab_numero %> (<%= factura.hab_tipo %>)</td>
+        <td><%= Math.ceil((new Date(factura.fecha_salida) - new Date(factura.fecha_entrada)) / (1000*60*60*24)) %> noches</td>
+        <td>$<%= Number(factura.precio_noche).toLocaleString('es-CO') %></td>
+        <td>$<%= Number(factura.subtotal).toLocaleString('es-CO') %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <table>
+      <tr><td>Subtotal</td><td style="text-align:right;">$<%= Number(factura.subtotal).toLocaleString('es-CO') %></td></tr>
+      <tr><td>IVA 19%</td><td style="text-align:right;">$<%= Number(factura.impuestos).toLocaleString('es-CO') %></td></tr>
+      <% if (factura.descuento > 0) { %>
+      <tr><td>Descuento</td><td style="text-align:right;">-$<%= Number(factura.descuento).toLocaleString('es-CO') %></td></tr>
+      <% } %>
+      <tr><td><strong>TOTAL</strong></td><td style="text-align:right;"><strong>$<%= Number(factura.total).toLocaleString('es-CO') %></strong></td></tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>Esta factura se asimila en todos sus efectos a una letra de cambio según el artículo 774 del Código de Comercio de Colombia.</p>
+    <p style="margin-top:0.5rem;">Estado: <span class="badge"><%= factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1) %></span></p>
+    <p style="margin-top: 1.5rem;">Generado por HotelAdmin Portal - <%= new Date().toLocaleString('es-CO') %></p>
+  </div>
+  </div>
+</body>
+</html>

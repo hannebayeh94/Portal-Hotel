@@ -1,0 +1,7 @@
+.git
+node_modules/
+hotel.db
+public/uploads/*
+!public/uploads/.gitkeep
+.env
+*.log

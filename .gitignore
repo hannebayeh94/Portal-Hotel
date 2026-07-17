@@ -1,0 +1,12 @@
+node_modules/
+hotel.db
+public/uploads/*
+!public/uploads/.gitkeep
+.env
+*.log
+
+# Fotos reales de cédula usadas como fixtures de prueba durante el desarrollo del OCR.
+# No deben publicarse en el repositorio.
+atras.jpeg
+delante.jpeg
+cedula100exacta.jpg

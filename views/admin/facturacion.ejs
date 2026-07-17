@@ -1,0 +1,113 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-file-invoice-dollar" style="color:#1f4d3a"></i> Facturación</h1>
+</div>
+
+<div class="tabs">
+  <a href="/admin/tarifas">Tarifas</a>
+  <a href="/admin/temporadas">Temporadas</a>
+  <a href="/admin/promociones">Promociones</a>
+  <a href="/admin/reportes">Reportes</a>
+  <a href="/admin/facturacion" class="active">Facturación</a>
+</div>
+
+<div class="card">
+  <form method="GET" class="flex gap-3 items-center" style="flex-wrap:wrap;">
+    <select name="estado" class="form-control" style="width:auto; min-width:140px;">
+      <option value="">Todos</option>
+      <option value="emitida" <%= filtros.estado === 'emitida' ? 'selected' : '' %>>Emitida</option>
+      <option value="pagada" <%= filtros.estado === 'pagada' ? 'selected' : '' %>>Pagada</option>
+      <option value="anulada" <%= filtros.estado === 'anulada' ? 'selected' : '' %>>Anulada</option>
+    </select>
+    <input type="date" name="desde" class="form-control" style="width:auto;" value="<%= filtros.desde || '' %>">
+    <input type="date" name="hasta" class="form-control" style="width:auto;" value="<%= filtros.hasta || '' %>">
+    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filtrar</button>
+    <a href="/admin/facturacion" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th># Factura</th>
+          <th>Huésped</th>
+          <th>Cédula</th>
+          <th>Habitación</th>
+          <th>Período</th>
+          <th>Subtotal</th>
+          <th>IVA</th>
+          <th>Total</th>
+          <th>Emisión</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (facturas && facturas.length > 0) { %>
+          <% facturas.forEach(function(f) { %>
+          <tr>
+            <td><strong><%= f.id %></strong></td>
+            <td><%= f.nombre %> <%= f.apellido %></td>
+            <td><%= f.numero_cedula %></td>
+            <td><%= f.hab_numero %></td>
+            <td class="text-sm"><%= new Date(f.fecha_entrada).toLocaleDateString('es-CO') %> - <%= new Date(f.fecha_salida).toLocaleDateString('es-CO') %></td>
+            <td>$<%= Number(f.subtotal).toLocaleString('es-CO') %></td>
+            <td>$<%= Number(f.impuestos).toLocaleString('es-CO') %></td>
+            <td><strong>$<%= Number(f.total).toLocaleString('es-CO') %></strong></td>
+            <td class="text-sm"><%= new Date(f.fecha_emision).toLocaleDateString('es-CO') %></td>
+            <td>
+              <span class="badge <%= f.estado === 'pagada' ? 'badge-success' : f.estado === 'emitida' ? 'badge-warning' : 'badge-danger' %>">
+                <%= f.estado.charAt(0).toUpperCase() + f.estado.slice(1) %>
+              </span>
+            </td>
+            <td>
+              <div class="flex gap-2">
+                <a href="/admin/facturacion/<%= f.id %>/pdf" target="_blank" class="btn btn-sm btn-outline"><i class="fas fa-file-pdf"></i></a>
+                <% if (f.estado === 'emitida') { %>
+                  <button class="btn btn-sm btn-success" onclick="pagarFactura(<%= f.id %>)"><i class="fas fa-check"></i></button>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="11" class="text-center text-muted">No hay facturas</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="modalPago" class="modal">
+  <div class="modal-content" style="max-width:400px;">
+    <button class="modal-close" onclick="this.closest('.modal').classList.remove('active')">&times;</button>
+    <h3 style="margin-bottom:1.5rem;">Registrar Pago</h3>
+    <form method="POST" action="" id="formPago">
+      <div class="form-group">
+        <label>Método de Pago</label>
+        <select name="metodo_pago" class="form-control" required>
+          <option value="efectivo">Efectivo</option>
+          <option value="tarjeta_credito">Tarjeta de Crédito</option>
+          <option value="tarjeta_debito">Tarjeta Débito</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="nequi">Nequi</option>
+          <option value="daviplata">Daviplata</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+        <button type="submit" class="btn btn-success"><i class="fas fa-check-circle"></i> Confirmar Pago</button>
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalPago').classList.remove('active')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function pagarFactura(id) {
+  document.getElementById('formPago').action = '/admin/facturacion/' + id + '/pagar';
+  document.getElementById('modalPago').classList.add('active');
+}
+</script>
+<%- include('../partials/footer') %>

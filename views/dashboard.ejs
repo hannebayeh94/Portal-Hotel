@@ -1,0 +1,134 @@
+<%- include('partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-chart-pie" style="color:#1f4d3a"></i> Dashboard</h1>
+  <div class="user-info">
+    <i class="fas fa-user-circle"></i> <span><%= user.nombre %></span>
+    <span style="color:#ccc">|</span>
+    <span><%= new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+  </div>
+</div>
+
+<div class="grid-4">
+  <div class="stat-card">
+    <div class="icon" style="color:#1f4d3a"><i class="fas fa-users"></i></div>
+    <div class="number"><%= totalHuespedes %></div>
+    <div class="label">Huéspedes Registrados</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon" style="color:#059669"><i class="fas fa-calendar-check"></i></div>
+    <div class="number"><%= totalReservas %></div>
+    <div class="label">Reservas Totales</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon" style="color:#d97706"><i class="fas fa-percentage"></i></div>
+    <div class="number"><%= ocupacion %>%</div>
+    <div class="label">Ocupación Actual</div>
+  </div>
+  <div class="stat-card">
+    <div class="icon" style="color:#059669"><i class="fas fa-dollar-sign"></i></div>
+    <div class="number">$<%= Number(ingresosMes).toLocaleString('es-CO') %></div>
+    <div class="label">Ingresos del Mes</div>
+  </div>
+</div>
+
+<% if (checkinsHoy && checkinsHoy.length > 0) { %>
+<div class="card" style="border-left: 4px solid #1f4d3a;">
+  <div class="card-header"><h3><i class="fas fa-sign-in-alt" style="color:#1f4d3a"></i> Check-ins de Hoy</h3></div>
+  <% checkinsHoy.forEach(function(r) { %>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f0f0f0">
+      <div><strong><%= r.nombre %> <%= r.apellido %></strong> - Hab <%= r.hab_numero %></div>
+      <a href="/reservas/<%= r.id %>" class="btn btn-primary btn-sm"><i class="fas fa-arrow-right"></i> Ver</a>
+    </div>
+  <% }) %>
+</div>
+<% } %>
+
+<% if (checkoutsHoy && checkoutsHoy.length > 0) { %>
+<div class="card" style="border-left: 4px solid #d97706;">
+  <div class="card-header"><h3><i class="fas fa-sign-out-alt" style="color:#d97706"></i> Check-outs de Hoy</h3></div>
+  <% checkoutsHoy.forEach(function(r) { %>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f0f0f0">
+      <div><strong><%= r.nombre %> <%= r.apellido %></strong> - Hab <%= r.hab_numero %></div>
+      <a href="/reservas/<%= r.id %>" class="btn btn-warning btn-sm"><i class="fas fa-arrow-right"></i> Checkout</a>
+    </div>
+  <% }) %>
+</div>
+<% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-bed" style="color:#1f4d3a"></i> Reservas Activas</h3>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Huésped</th>
+          <th>Cédula</th>
+          <th>Habitación</th>
+          <th>Tipo</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (reservasActivas && reservasActivas.length > 0) { %>
+          <% reservasActivas.forEach(function(r) { %>
+          <tr>
+            <td><strong><%= r.nombre %> <%= r.apellido %></strong></td>
+            <td><%= r.numero_cedula %></td>
+            <td><%= r.hab_numero %></td>
+            <td><span class="badge badge-info"><%= r.hab_tipo %></span></td>
+            <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
+            <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
+            <td>
+              <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+              <% if (r.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
+            </td>
+            <td><a href="/reservas/<%= r.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a></td>
+          </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="8" class="text-center text-muted">No hay reservas activas</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-chart-line" style="color:#059669"></i> Acceso Rápido</h3></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+      <a href="/huespedes/nuevo" class="btn btn-primary"><i class="fas fa-user-plus"></i> Nuevo Huésped</a>
+      <a href="/reservas/nueva" class="btn btn-success"><i class="fas fa-key"></i> Check-in Rápido</a>
+      <a href="/habitaciones/nueva" class="btn btn-warning"><i class="fas fa-plus-square"></i> Nueva Habitación</a>
+      <a href="/admin/reportes" class="btn btn-outline"><i class="fas fa-chart-bar"></i> Reportes</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-info-circle" style="color:#1f4d3a"></i> Resumen del Día</h3></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; text-align:center;">
+      <div>
+        <div style="font-size:1.5rem; font-weight:700; color:#1f4d3a"><%= checkinsHoy ? checkinsHoy.length : 0 %></div>
+        <div class="text-muted text-sm">Check-ins Hoy</div>
+      </div>
+      <div>
+        <div style="font-size:1.5rem; font-weight:700; color:#d97706"><%= checkoutsHoy ? checkoutsHoy.length : 0 %></div>
+        <div class="text-muted text-sm">Check-outs Hoy</div>
+      </div>
+      <div>
+        <div style="font-size:1.5rem; font-weight:700; color:#059669"><%= reservasActivas ? reservasActivas.length : 0 %></div>
+        <div class="text-muted text-sm">Reservas Activas</div>
+      </div>
+      <div>
+        <div style="font-size:1.5rem; font-weight:700; color:#9333ea"><%= totalHuespedes %></div>
+        <div class="text-muted text-sm">Total Huéspedes</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

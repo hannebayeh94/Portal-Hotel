@@ -1,0 +1,96 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-percent" style="color:#1f4d3a"></i> Promociones</h1>
+</div>
+
+<div class="tabs">
+  <a href="/admin/tarifas">Tarifas</a>
+  <a href="/admin/temporadas">Temporadas</a>
+  <a href="/admin/promociones" class="active">Promociones</a>
+  <a href="/admin/reportes">Reportes</a>
+  <a href="/admin/facturacion">Facturación</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Promociones y Descuentos</h3>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('modalPromo').classList.add('active')"><i class="fas fa-plus"></i> Nueva Promoción</button>
+  </div>
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <div class="table-container">
+    <table>
+      <thead><tr><th>Nombre</th><th>Código</th><th>Descuento</th><th>Vigencia</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+        <% promociones.forEach(function(p) { %>
+        <tr>
+          <td><strong><%= p.nombre %></strong></td>
+          <td><span class="badge badge-info"><%= p.codigo || '-' %></span></td>
+          <td><%= p.descuento %>%</td>
+          <td class="text-sm"><%= p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString('es-CO') : 'Siempre' %> - <%= p.fecha_fin ? new Date(p.fecha_fin).toLocaleDateString('es-CO') : 'Siempre' %></td>
+          <td>
+            <span class="badge <%= p.activo ? 'badge-success' : 'badge-gray' %>"><%= p.activo ? 'Activo' : 'Inactivo' %></span>
+          </td>
+          <td>
+            <form method="POST" action="/admin/promociones/<%= p.id %>/toggle" style="display:inline;">
+              <button type="submit" class="btn btn-sm <%= p.activo ? 'btn-warning' : 'btn-success' %>">
+                <i class="fas <%= p.activo ? 'fa-pause' : 'fa-play' %>"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="modalPromo" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="this.closest('.modal').classList.remove('active')">&times;</button>
+    <h3 style="margin-bottom:1.5rem;">Nueva Promoción</h3>
+    <form method="POST" action="/admin/promociones/nueva">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Código (único)</label>
+          <input type="text" name="codigo" class="form-control" placeholder="PROMO10">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea name="descripcion" class="form-control" rows="2"></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Descuento *</label>
+          <input type="number" name="descuento" class="form-control" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select name="tipo_descuento" class="form-control">
+            <option value="porcentaje">Porcentaje (%)</option>
+            <option value="fijo">Valor Fijo ($)</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Fecha Inicio</label>
+          <input type="date" name="fecha_inicio" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Fecha Fin</label>
+          <input type="date" name="fecha_fin" class="form-control">
+        </div>
+      </div>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalPromo').classList.remove('active')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../partials/footer') %>

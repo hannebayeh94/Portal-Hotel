@@ -1,0 +1,73 @@
+<%- include('../partials/header') %>
+<%
+// new Date('YYYY-MM-DD') se interpreta en UTC; convertirlo con
+// toLocaleDateString en una zona horaria detrás de UTC corre la fecha
+// un día hacia atrás. Se formatea el string directamente, sin Date.
+function fechaCO(iso) {
+  if (!iso) return '-';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
+%>
+<div class="topbar">
+  <h1><i class="fas fa-user" style="color:#1f4d3a"></i> <%= huesped.nombre %> <%= huesped.apellido %></h1>
+  <div class="flex gap-2">
+    <a href="/huespedes/<%= huesped.id %>/editar" class="btn btn-primary"><i class="fas fa-edit"></i> Editar</a>
+    <a href="/reservas/nueva?huesped_id=<%= huesped.id %>" class="btn btn-success"><i class="fas fa-plus-circle"></i> Nueva Reserva</a>
+    <a href="/huespedes" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-id-card"></i> Información Personal</h3></div>
+    <table>
+      <tr><td style="font-weight:600; width:180px;">Nombre Completo</td><td><%= huesped.nombre %> <%= huesped.apellido %></td></tr>
+      <tr><td style="font-weight:600;">Número de Cédula</td><td><%= huesped.numero_cedula %></td></tr>
+      <tr><td style="font-weight:600;">Fecha de Nacimiento</td><td><%= fechaCO(huesped.fecha_nacimiento) %></td></tr>
+      <tr><td style="font-weight:600;">Lugar de Nacimiento</td><td><%= huesped.lugar_nacimiento || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Sexo</td><td><%= huesped.sexo || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Grupo Sanguíneo</td><td><%= huesped.grupo_sanguineo || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Estatura</td><td><%= huesped.estatura ? huesped.estatura + ' m' : '-' %></td></tr>
+      <tr><td style="font-weight:600;">Fecha de Expedición</td><td><%= fechaCO(huesped.fecha_expedicion) %></td></tr>
+      <tr><td style="font-weight:600;">Lugar de Expedición</td><td><%= huesped.lugar_expedicion || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Email</td><td><%= huesped.email || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Teléfono</td><td><%= huesped.telefono || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Dirección</td><td><%= huesped.direccion || '-' %></td></tr>
+      <tr><td style="font-weight:600;">Registrado</td><td><%= new Date(huesped.created_at).toLocaleString('es-CO') %></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-calendar-check"></i> Historial de Reservas</h3></div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>#</th><th>Habitación</th><th>Entrada</th><th>Salida</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          <% if (reservas && reservas.length > 0) { %>
+            <% reservas.forEach(function(r) { %>
+            <tr>
+              <td><%= r.id %></td>
+              <td><%= r.hab_numero %> (<%= r.hab_tipo %>)</td>
+              <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
+              <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
+              <td>$<%= Number(r.precio_total).toLocaleString('es-CO') %></td>
+              <td>
+                <% if (r.estado === 'pendiente') { %><span class="badge badge-warning">Pendiente</span><% } %>
+                <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+                <% if (r.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
+                <% if (r.estado === 'checkout') { %><span class="badge badge-gray">Check-out</span><% } %>
+                <% if (r.estado === 'cancelada') { %><span class="badge badge-danger">Cancelada</span><% } %>
+              </td>
+              <td><a href="/reservas/<%= r.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a></td>
+            </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="7" class="text-center text-muted">Sin reservas</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

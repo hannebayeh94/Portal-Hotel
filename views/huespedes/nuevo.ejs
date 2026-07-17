@@ -1,0 +1,278 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-<%= huesped && huesped.id ? 'edit' : 'user-plus' %>" style="color:#1f4d3a"></i> <%= huesped && huesped.id ? 'Editar Huésped' : 'Nuevo Huésped' %></h1>
+  <a href="/huespedes" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card">
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div><% } %>
+
+  <div class="grid-2">
+    <div>
+      <div style="background:var(--info-soft); border-radius:8px; padding:0.75rem; margin-bottom:1rem; font-size:0.8rem; color:var(--info);">
+        <i class="fas fa-lightbulb"></i> <strong>Consejos para mejor captura:</strong>
+        <ul style="margin:0.25rem 0 0 1.25rem; padding:0;">
+          <li>Buena iluminación (luz natural o flash), sin reflejos ni sombras</li>
+          <li>Cédula bien enfocada, centrada y ocupando el recuadro</li>
+          <li>Capture <strong>ambos lados</strong>: el reverso trae la fecha de nacimiento, lugar de nacimiento, RH y expedición</li>
+          <li>Si el resultado sale girado o incompleto, use los botones de rotar y "Reprocesar"</li>
+        </ul>
+      </div>
+
+      <% ['frente', 'reverso'].forEach(function(lado) { %>
+      <div class="card" style="border:2px dashed #d0d0d0; text-align:center;">
+        <h3 style="margin-bottom:1rem;"><i class="fas fa-camera"></i> <%= lado === 'frente' ? 'Frente de la Cédula' : 'Reverso de la Cédula' %></h3>
+
+        <div class="camera-container" id="cameraContainer_<%= lado %>" style="display:none;">
+          <video id="video_<%= lado %>" autoplay playsinline></video>
+          <div class="ocr-overlay"></div>
+        </div>
+        <canvas id="canvas_<%= lado %>" style="display:none;"></canvas>
+        <div id="photoPreview_<%= lado %>" style="display:none; margin-bottom:1rem;">
+          <img id="photoImg_<%= lado %>" style="max-width:100%; border-radius:8px; border:2px solid #d0d0d0;">
+        </div>
+        <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="abrirCamara('<%= lado %>')"><i class="fas fa-camera"></i> Tomar Foto</button>
+          <button class="btn btn-outline" onclick="document.getElementById('fileInput_<%= lado %>').click()"><i class="fas fa-upload"></i> Subir Imagen</button>
+          <input type="file" id="fileInput_<%= lado %>" accept="image/*" style="display:none" onchange="procesarArchivo(event, '<%= lado %>')">
+          <button id="btnCapturar_<%= lado %>" class="btn btn-success" style="display:none" onclick="capturarFoto('<%= lado %>')"><i class="fas fa-camera"></i> Capturar</button>
+          <button id="btnRotar_<%= lado %>" class="btn btn-outline" style="display:none" onclick="rotarImagen('<%= lado %>')"><i class="fas fa-redo"></i> Rotar</button>
+          <button id="btnReprocesar_<%= lado %>" class="btn btn-warning" style="display:none" onclick="reprocesarOCR('<%= lado %>')"><i class="fas fa-sync"></i> Reprocesar OCR</button>
+        </div>
+        <div id="ocrStatus_<%= lado %>" style="margin-top:0.75rem; font-size:0.85rem; color:#888;"></div>
+        <div id="ocrWarning_<%= lado %>" style="display:none; margin-top:0.5rem; padding:0.5rem; background:#fef3c7; border-radius:8px; font-size:0.8rem; color:#92400e;"></div>
+      </div>
+      <% }) %>
+    </div>
+
+    <div>
+      <form method="POST" action="<%= huesped && huesped.id ? '/huespedes/' + huesped.id + '/editar' : '/huespedes/nuevo' %>">
+        <% if (huesped && huesped.id) { %><input type="hidden" name="_method" value="POST"><% } %>
+        <div class="grid-2">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Nombre *</label>
+            <input type="text" name="nombre" class="form-control" id="campoNombre" value="<%= huesped ? huesped.nombre : '' %>" required>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Apellido *</label>
+            <input type="text" name="apellido" class="form-control" id="campoApellido" value="<%= huesped ? huesped.apellido : '' %>" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-id-card"></i> Número de Cédula *</label>
+          <input type="text" name="numero_cedula" class="form-control" id="campoCedula" value="<%= huesped ? huesped.numero_cedula : '' %>" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
+            <input type="date" name="fecha_nacimiento" class="form-control" id="campoNacimiento" value="<%= huesped ? huesped.fecha_nacimiento : '' %>">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> Lugar de Nacimiento</label>
+            <input type="text" name="lugar_nacimiento" class="form-control" id="campoLugarNacimiento" value="<%= huesped ? huesped.lugar_nacimiento : '' %>">
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="form-group">
+            <label><i class="fas fa-venus-mars"></i> Sexo</label>
+            <select name="sexo" class="form-control" id="campoSexo">
+              <option value="" <%= !huesped || !huesped.sexo ? 'selected' : '' %>>-</option>
+              <option value="M" <%= huesped && huesped.sexo === 'M' ? 'selected' : '' %>>M</option>
+              <option value="F" <%= huesped && huesped.sexo === 'F' ? 'selected' : '' %>>F</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-tint"></i> Grupo Sanguíneo</label>
+            <input type="text" name="grupo_sanguineo" class="form-control" id="campoRH" value="<%= huesped ? huesped.grupo_sanguineo : '' %>">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-ruler-vertical"></i> Estatura (m)</label>
+            <input type="text" name="estatura" class="form-control" id="campoEstatura" value="<%= huesped ? huesped.estatura : '' %>">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label><i class="fas fa-calendar-check"></i> Fecha de Expedición</label>
+            <input type="date" name="fecha_expedicion" class="form-control" id="campoExpedicion" value="<%= huesped ? huesped.fecha_expedicion : '' %>">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> Lugar de Expedición</label>
+            <input type="text" name="lugar_expedicion" class="form-control" id="campoLugar" value="<%= huesped ? huesped.lugar_expedicion : '' %>">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" class="form-control" value="<%= huesped ? huesped.email : '' %>">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-phone"></i> Teléfono</label>
+            <input type="text" name="telefono" class="form-control" value="<%= huesped ? huesped.telefono : '' %>">
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-home"></i> Dirección</label>
+          <input type="text" name="direccion" class="form-control" value="<%= huesped ? huesped.direccion : '' %>">
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <%= huesped && huesped.id ? 'Actualizar' : 'Guardar' %></button>
+          <a href="/huespedes" class="btn btn-outline">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const streams = {};
+const capturedImages = { frente: null, reverso: null };
+
+async function abrirCamara(lado) {
+  const container = document.getElementById('cameraContainer_' + lado);
+  const video = document.getElementById('video_' + lado);
+  const btnCapturar = document.getElementById('btnCapturar_' + lado);
+
+  try {
+    streams[lado] = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
+    video.srcObject = streams[lado];
+    container.style.display = 'block';
+    btnCapturar.style.display = 'inline-flex';
+    document.getElementById('ocrStatus_' + lado).textContent = 'Cámara activada. Enfoque la cédula y capture.';
+  } catch (err) {
+    document.getElementById('ocrStatus_' + lado).textContent = 'Error al acceder a la cámara: ' + err.message;
+  }
+}
+
+function pararCamara(lado) {
+  if (streams[lado]) { streams[lado].getTracks().forEach(function(t) { t.stop(); }); streams[lado] = null; }
+  document.getElementById('cameraContainer_' + lado).style.display = 'none';
+  document.getElementById('btnCapturar_' + lado).style.display = 'none';
+}
+
+function mostrarPreview(lado, dataUrl) {
+  capturedImages[lado] = dataUrl;
+  document.getElementById('photoPreview_' + lado).style.display = 'block';
+  document.getElementById('photoImg_' + lado).src = dataUrl;
+  document.getElementById('btnReprocesar_' + lado).style.display = 'inline-flex';
+  document.getElementById('btnRotar_' + lado).style.display = 'inline-flex';
+}
+
+function capturarFoto(lado) {
+  const video = document.getElementById('video_' + lado);
+  const canvas = document.getElementById('canvas_' + lado);
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  mostrarPreview(lado, canvas.toDataURL('image/jpeg', 0.95));
+  pararCamara(lado);
+  procesarOCR(lado, capturedImages[lado]);
+}
+
+function procesarArchivo(event, lado) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    mostrarPreview(lado, e.target.result);
+    procesarOCR(lado, capturedImages[lado]);
+  };
+  reader.readAsDataURL(file);
+}
+
+function rotarImagen(lado) {
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.getElementById('canvas_' + lado);
+    canvas.width = img.height;
+    canvas.height = img.width;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    mostrarPreview(lado, canvas.toDataURL('image/jpeg', 0.95));
+    procesarOCR(lado, capturedImages[lado]);
+  };
+  img.src = capturedImages[lado];
+}
+
+async function procesarOCR(lado, imageData) {
+  const status = document.getElementById('ocrStatus_' + lado);
+  status.innerHTML = '<span class="spinner"></span> Procesando OCR...';
+
+  try {
+    const blob = await (await fetch(imageData)).blob();
+    const formData = new FormData();
+    formData.append('imagen', blob, 'cedula_' + lado + '.jpg');
+
+    const uploadRes = await fetch('/api/ocr/upload', { method: 'POST', body: formData });
+    const uploadData = await uploadRes.json();
+
+    if (uploadData.file) {
+      const ocrRes = await fetch('/api/extraer-datos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagePath: uploadData.file, lado: lado })
+      });
+      const ocrData = await ocrRes.json();
+
+      if (ocrData.success && ocrData.datos) {
+        llenarDatos(ocrData.datos);
+        const motor = { tesseract: 'Tesseract', barcode: 'código de barras', 'barcode+tesseract': 'código de barras + Tesseract' }[ocrData.engine] || ocrData.engine;
+        status.innerHTML = '<i class="fas fa-check-circle" style="color:#059669"></i> Datos extraídos (' + motor + ')' + (ocrData.confidence ? ' · confianza OCR: ' + ocrData.confidence + '%' : '');
+        if (ocrData.warning) {
+          document.getElementById('ocrWarning_' + lado).style.display = 'block';
+          document.getElementById('ocrWarning_' + lado).innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + ocrData.warning;
+        } else {
+          document.getElementById('ocrWarning_' + lado).style.display = 'none';
+        }
+      } else {
+        status.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#d97706"></i> No se pudieron extraer suficientes datos de esta imagen.';
+        document.getElementById('ocrWarning_' + lado).style.display = 'block';
+        document.getElementById('ocrWarning_' + lado).innerHTML = '<i class="fas fa-info-circle"></i> Pruebe con más luz, sin reflejos, o use el botón "Rotar" si la imagen no quedó derecha. También puede completar los datos manualmente.';
+      }
+    }
+  } catch (err) {
+    status.innerHTML = '<i class="fas fa-times-circle" style="color:#dc2626"></i> Error de OCR: ' + err.message;
+  }
+}
+
+function llenarDatos(datos) {
+  const mapaSimple = {
+    numero_cedula: 'campoCedula',
+    lugar_nacimiento: 'campoLugarNacimiento',
+    sexo: 'campoSexo',
+    grupo_sanguineo: 'campoRH',
+    estatura: 'campoEstatura',
+    lugar_expedicion: 'campoLugar'
+  };
+
+  if (datos.nombre) document.getElementById('campoNombre').value = capitalizar(datos.nombre);
+  if (datos.apellido) document.getElementById('campoApellido').value = capitalizar(datos.apellido);
+  if (datos.numero_cedula) document.getElementById('campoCedula').value = datos.numero_cedula.replace(/\./g, '');
+  if (datos.fecha_nacimiento) document.getElementById('campoNacimiento').value = datos.fecha_nacimiento;
+  if (datos.fecha_expedicion) document.getElementById('campoExpedicion').value = datos.fecha_expedicion;
+  if (datos.lugar_nacimiento) document.getElementById('campoLugarNacimiento').value = capitalizar(datos.lugar_nacimiento);
+  if (datos.lugar_expedicion) document.getElementById('campoLugar').value = capitalizar(datos.lugar_expedicion);
+  if (datos.sexo) document.getElementById('campoSexo').value = datos.sexo;
+  if (datos.grupo_sanguineo) document.getElementById('campoRH').value = datos.grupo_sanguineo;
+  if (datos.estatura) document.getElementById('campoEstatura').value = datos.estatura;
+
+  const idsActualizados = ['campoNombre', 'campoApellido', 'campoCedula', 'campoNacimiento', 'campoExpedicion', 'campoLugarNacimiento', 'campoLugar', 'campoSexo', 'campoRH', 'campoEstatura'];
+  idsActualizados.forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el && el.value) {
+      el.classList.add('result-highlight');
+      setTimeout(function() { el.classList.remove('result-highlight'); }, 1500);
+    }
+  });
+}
+
+function capitalizar(str) {
+  return str.toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
+function reprocesarOCR(lado) {
+  if (capturedImages[lado]) procesarOCR(lado, capturedImages[lado]);
+}
+</script>
+<%- include('../partials/footer') %>

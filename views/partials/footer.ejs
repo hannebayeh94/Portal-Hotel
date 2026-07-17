@@ -1,0 +1,27 @@
+</div>
+<script>
+function showToast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'error' ? ' error' : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+function openMoreSheet() {
+  const sheet = document.getElementById('moreSheet');
+  const backdrop = document.getElementById('moreBackdrop');
+  if (sheet) sheet.classList.add('open');
+  if (backdrop) backdrop.classList.add('open');
+}
+
+function closeMoreSheet() {
+  const sheet = document.getElementById('moreSheet');
+  const backdrop = document.getElementById('moreBackdrop');
+  if (sheet) sheet.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('open');
+}
+</script>
+</body>
+</html>

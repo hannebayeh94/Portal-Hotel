@@ -1,0 +1,87 @@
+<%- include('../partials/header') %>
+<div class="topbar">
+  <h1><i class="fas fa-calendar-check" style="color:#1f4d3a"></i> Reserva #<%= reserva.id %></h1>
+  <div class="flex gap-2">
+    <% if (reserva.estado === 'confirmada') { %>
+      <form method="POST" action="/reservas/<%= reserva.id %>/checkin" style="display:inline;">
+        <button type="submit" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Realizar Check-in</button>
+      </form>
+    <% } %>
+    <% if (reserva.estado === 'checkin') { %>
+      <form method="POST" action="/reservas/<%= reserva.id %>/checkout" style="display:inline;">
+        <button type="submit" class="btn btn-warning"><i class="fas fa-sign-out-alt"></i> Realizar Check-out</button>
+      </form>
+    <% } %>
+    <% if (reserva.estado === 'confirmada' || reserva.estado === 'pendiente') { %>
+      <form method="POST" action="/reservas/<%= reserva.id %>/cancelar" style="display:inline;" onsubmit="return confirm('¿Está seguro de cancelar esta reserva?')">
+        <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Cancelar</button>
+      </form>
+    <% } %>
+    <% if (reserva.estado !== 'cancelada') { %>
+      <form method="POST" action="/reservas/<%= reserva.id %>/pago" style="display:inline;">
+        <button type="submit" class="btn <%= reserva.pagado ? 'btn-success' : 'btn-warning' %>"><i class="fas <%= reserva.pagado ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= reserva.pagado ? 'Pagado' : 'Marcar como pagado' %></button>
+      </form>
+    <% } %>
+    <a href="/reservas" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-info-circle"></i> Detalle de Reserva</h3></div>
+    <table>
+      <tr><td style="font-weight:600; width:160px;">Estado</td><td>
+        <% if (reserva.estado === 'pendiente') { %><span class="badge badge-warning">Pendiente</span><% } %>
+        <% if (reserva.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+        <% if (reserva.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
+        <% if (reserva.estado === 'checkout') { %><span class="badge badge-gray">Check-out</span><% } %>
+        <% if (reserva.estado === 'cancelada') { %><span class="badge badge-danger">Cancelada</span><% } %>
+      </td></tr>
+      <tr><td style="font-weight:600;">Pago</td><td>
+        <span class="badge <%= reserva.pagado ? 'badge-success' : 'badge-warning' %>"><%= reserva.pagado ? 'Pagado' : 'Pendiente de pago' %></span>
+      </td></tr>
+      <tr><td style="font-weight:600;">Habitación</td><td><strong><%= reserva.hab_numero %></strong> (<%= reserva.hab_tipo %>)</td></tr>
+      <tr><td style="font-weight:600;">Fecha Entrada</td><td><%= new Date(reserva.fecha_entrada).toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %></td></tr>
+      <tr><td style="font-weight:600;">Fecha Salida</td><td><%= new Date(reserva.fecha_salida).toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %></td></tr>
+      <tr><td style="font-weight:600;">Noches</td><td><%= Math.ceil((new Date(reserva.fecha_salida) - new Date(reserva.fecha_entrada)) / (1000*60*60*24)) %></td></tr>
+      <tr><td style="font-weight:600;">Adultos</td><td><%= reserva.adultos %></td></tr>
+      <tr><td style="font-weight:600;">Niños</td><td><%= reserva.ninos %></td></tr>
+      <tr><td style="font-weight:600;">Precio por Noche</td><td>$<%= Number(reserva.precio_noche).toLocaleString('es-CO') %></td></tr>
+      <tr><td style="font-weight:600;">Precio Total</td><td><strong style="color:#1f4d3a; font-size:1.1rem;">$<%= Number(reserva.precio_total).toLocaleString('es-CO') %></strong></td></tr>
+      <% if (reserva.promo_nombre) { %><tr><td style="font-weight:600;">Promoción</td><td><span class="badge badge-warning"><%= reserva.promo_nombre %> (<%= reserva.promo_descuento %>% desc)</span></td></tr><% } %>
+      <% if (reserva.notas) { %><tr><td style="font-weight:600;">Notas</td><td><%= reserva.notas %></td></tr><% } %>
+    </table>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-user"></i> Datos del Huésped</h3></div>
+      <table>
+        <tr><td style="font-weight:600; width:120px;">Nombre</td><td><strong><%= reserva.nombre %> <%= reserva.apellido %></strong></td></tr>
+        <tr><td style="font-weight:600;">Cédula</td><td><%= reserva.numero_cedula %></td></tr>
+        <tr><td style="font-weight:600;">Email</td><td><%= reserva.email || '-' %></td></tr>
+        <tr><td style="font-weight:600;">Teléfono</td><td><%= reserva.telefono || '-' %></td></tr>
+        <tr><td colspan="2" style="padding-top:1rem;"><a href="/huespedes/<%= reserva.huesped_id %>" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> Ver perfil completo</a></td></tr>
+      </table>
+    </div>
+
+    <% if (factura) { %>
+    <div class="card" style="margin-top:1rem;">
+      <div class="card-header"><h3><i class="fas fa-file-invoice-dollar"></i> Factura #<%= factura.id %></h3></div>
+      <table>
+        <tr><td style="font-weight:600; width:120px;">Subtotal</td><td>$<%= Number(factura.subtotal).toLocaleString('es-CO') %></td></tr>
+        <tr><td style="font-weight:600;">IVA (19%)</td><td>$<%= Number(factura.impuestos).toLocaleString('es-CO') %></td></tr>
+        <tr><td style="font-weight:600;">Total</td><td><strong style="color:#1f4d3a;">$<%= Number(factura.total).toLocaleString('es-CO') %></strong></td></tr>
+        <tr><td style="font-weight:600;">Estado</td><td>
+          <span class="badge <%= factura.estado === 'pagada' ? 'badge-success' : 'badge-warning' %>"><%= factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1) %></span>
+        </td></tr>
+        <tr><td style="font-weight:600;">Emisión</td><td><%= new Date(factura.fecha_emision).toLocaleString('es-CO') %></td></tr>
+        <tr><td colspan="2" style="padding-top:1rem;">
+          <a href="/admin/facturacion/<%= factura.id %>/pdf" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-file-pdf"></i> Ver Factura</a>
+        </td></tr>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>
