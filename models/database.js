@@ -210,7 +210,7 @@ async function initialize() {
     const roomTypes = [];
     for (let i = 1; i <= 7; i++) {
       roomTypes.push({
-        numero: String(100 + i),
+        numero: String(i),
         tipo: 'doble',
         precio: 35000,
         descripcion: 'Habitación con aire acondicionado',
@@ -219,16 +219,27 @@ async function initialize() {
     }
     for (let i = 1; i <= 5; i++) {
       roomTypes.push({
-        numero: String(107 + i),
+        numero: String(7 + i),
         tipo: 'doble',
         precio: 25000,
         descripcion: 'Habitación con ventilador',
-        servicios: '["Ventilador"]'
+        servicios: '["Ventilador"]',
       });
     }
     for (const r of roomTypes) {
       dbRun('INSERT INTO habitaciones (numero, tipo, precio_base, capacidad, descripcion, servicios) VALUES (?, ?, ?, ?, ?, ?)',
         [r.numero, r.tipo, r.precio, 2, r.descripcion, r.servicios]);
+    }
+  }
+
+  // Migración puntual: una versión anterior sembró las habitaciones como
+  // 101..112. Si la base ya tiene exactamente esas 12, se renumeran a 1..12.
+  const numeracionVieja = ['101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112'];
+  const roomsActuales = dbAll('SELECT id, numero FROM habitaciones');
+  if (roomsActuales.length === numeracionVieja.length && numeracionVieja.every(n => roomsActuales.some(r => r.numero === n))) {
+    for (const r of roomsActuales) {
+      const idx = numeracionVieja.indexOf(r.numero);
+      if (idx >= 0) dbRun('UPDATE habitaciones SET numero = ? WHERE id = ?', [String(idx + 1), r.id]);
     }
   }
 
