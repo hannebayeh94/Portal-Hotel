@@ -1,124 +1,142 @@
 <%- include('../partials/header') %>
-<div class="topbar">
-  <h1><i class="fas fa-<%= huesped && huesped.id ? 'edit' : 'user-plus' %>" style="color:#1f4d3a"></i> <%= huesped && huesped.id ? 'Editar Huésped' : 'Nuevo Huésped' %></h1>
-  <a href="/huespedes" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-</div>
-
-<div class="card">
-  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div><% } %>
-
-  <div class="grid-2">
-    <div>
-      <div style="background:var(--info-soft); border-radius:8px; padding:0.75rem; margin-bottom:1rem; font-size:0.8rem; color:var(--info);">
-        <i class="fas fa-lightbulb"></i> <strong>Consejos para mejor captura:</strong>
-        <ul style="margin:0.25rem 0 0 1.25rem; padding:0;">
-          <li>Buena iluminación (luz natural o flash), sin reflejos ni sombras</li>
-          <li>Cédula bien enfocada, centrada y ocupando el recuadro</li>
-          <li>Capture <strong>ambos lados</strong>: el reverso trae la fecha de nacimiento, lugar de nacimiento, RH y expedición</li>
-          <li>Si el resultado sale girado o incompleto, use los botones de rotar y "Reprocesar"</li>
-        </ul>
+<div class="py-6">
+  <div class="max-w-4xl mx-auto">
+    <div class="card">
+      <div class="card-header flex items-center justify-between">
+        <h1 class="font-display text-xl"><i class="fas fa-<%= huesped && huesped.id ? 'edit' : 'user-plus' %>" style="color:var(--primary)"></i> <%= huesped && huesped.id ? 'Editar Huésped' : 'Nuevo Huésped' %></h1>
+        <a href="/huespedes" class="btn btn-sm btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
       </div>
 
-      <% ['frente', 'reverso'].forEach(function(lado) { %>
-      <div class="card" style="border:2px dashed #d0d0d0; text-align:center;">
-        <h3 style="margin-bottom:1rem;"><i class="fas fa-camera"></i> <%= lado === 'frente' ? 'Frente de la Cédula' : 'Reverso de la Cédula' %></h3>
+      <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div><% } %>
 
-        <div class="camera-container" id="cameraContainer_<%= lado %>" style="display:none;">
-          <video id="video_<%= lado %>" autoplay playsinline></video>
-          <div class="ocr-overlay"></div>
+      <div class="grid grid-cols-1 gap-6">
+        <div>
+          <div class="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200">
+            <i class="fas fa-lightbulb text-primary-500 text-sm mr-2"></i>
+            <strong>Consejos para mejor captura:</strong>
+            <ul class="text-xs text-gray-600 mt-1 pl-3">
+              <li>Buena iluminación (luz natural o flash), sin reflejos ni sombras</li>
+              <li>Cédula bien enfocada, centrada y ocupando el recuadro</li>
+              <li>Capture <strong>ambos lados</strong>: el reverso trae la fecha de nacimiento, lugar de nacimiento, RH y expedición</li>
+              <li>Si el resultado sale girado o incompleto, use los botones de rotar y "Reprocesar"</li>
+            </ul>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <% ['frente', 'reverso'].forEach(function(lado) { %>
+              <div class="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center">
+                <h3 class="text-sm font-medium mb-2"><i class="fas fa-camera"></i> <%= lado === 'frente' ? 'Frente de la Cédula' : 'Reverso de la Cédula' %></h3>
+
+                <div class="camera-container hidden" id="cameraContainer_<%= lado %>">
+                  <video id="video_<%= lado %>" autoplay playsinline class="w-full rounded-lg mb-2"></video>
+                  <div class="ocr-overlay absolute inset-0"></div>
+                </div>
+                <canvas id="canvas_<%= lado %>" class="hidden w-full rounded-lg mb-2"></canvas>
+                <div id="photoPreview_<%= lado %>" class="hidden p-2 rounded-lg border border-gray-300">
+                  <img id="photoImg_<%= lado %>" class="max-w-100 rounded-lg" style="max-height: 200px;">
+                </div>
+                <div class="mt-3 flex items-center justify-center flex-wrap gap-2">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="abrirCamara('<%= lado %>')"><i class="fas fa-camera"></i> Tomar Foto</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('fileInput_<%= lado %>').click()"><i class="fas fa-upload"></i> Subir Imagen</button>
+                  <input type="file" id="fileInput_<%= lado %>" accept="image/*" class="hidden">
+                  <button type="button" id="btnCapturar_<%= lado %>" class="btn btn-success btn-sm hidden" onclick="capturarFoto('<%= lado %>')"><i class="fas fa-camera"></i> Capturar</button>
+                  <button type="button" id="btnRotar_<%= lado %>" class="btn btn-outline btn-sm hidden" onclick="rotarImagen('<%= lado %>')"><i class="fas fa-redo"></i> Rotar</button>
+                  <button type="button" id="btnReprocesar_<%= lado %>" class="btn btn-warning btn-sm hidden" onclick="reprocesarOCR('<%= lado %>')"><i class="fas fa-sync"></i> Reprocesar OCR</button>
+                </div>
+                <div id="ocrStatus_<%= lado %>" class="mt-2 text-xs text-gray-500"></div>
+                <div id="ocrWarning_<%= lado %>" class="mt-1 hidden p-2 rounded text-xs" style="background:#fef3c7; color:#92400e;"></div>
+              </div>
+            <% }) %>
+          </div>
         </div>
-        <canvas id="canvas_<%= lado %>" style="display:none;"></canvas>
-        <div id="photoPreview_<%= lado %>" style="display:none; margin-bottom:1rem;">
-          <img id="photoImg_<%= lado %>" style="max-width:100%; border-radius:8px; border:2px solid #d0d0d0;">
+
+        <div>
+          <form method="POST" action="<%= huesped && huesped.id ? '/huespedes/' + huesped.id + '/editar' : '/huespedes/nuevo' %>">
+            <% if (huesped && huesped.id) { %><input type="hidden" name="_method" value="POST"><% } %>
+
+              <div class="grid grid-cols-1 gap-4">
+                <div>
+                  <div>
+                    <label for="campoNombre" class="form-label">Nombre *</label>
+                    <input type="text" name="nombre" id="campoNombre" value="<%= huesped ? huesped.nombre : '' %>" required class="form-input">
+                  </div>
+                  <div>
+                    <label for="campoApellido" class="form-label">Apellido *</label>
+                    <input type="text" name="apellido" id="campoApellido" value="<%= huesped ? huesped.apellido : '' %>" required class="form-input">
+                  </div>
+                </div>
+                <div>
+                  <div>
+                    <label for="campoCedula" class="form-label">Número de Cédula *</label>
+                    <input type="text" name="numero_cedula" id="campoCedula" value="<%= huesped ? huesped.numero_cedula : '' %>" required class="form-input">
+                  </div>
+                  <div>
+                    <label for="campoNacimiento" class="form-label">Fecha de Nacimiento</label>
+                    <input type="date" name="fecha_nacimiento" id="campoNacimiento" value="<%= huesped ? huesped.fecha_nacimiento : '' %>" class="form-input">
+                  </div>
+                </div>
+                <div>
+                  <div>
+                    <label for="campoLugarNacimiento" class="form-label">Lugar de Nacimiento</label>
+                    <input type="text" name="lugar_nacimiento" id="campoLugarNacimiento" value="<%= huesped ? huesped.lugar_nacimiento : '' %>" class="form-input">
+                  </div>
+                  <div>
+                    <label for="campoSexo" class="form-label">Sexo</label>
+                    <select name="sexo" id="campoSexo" class="form-select">
+                      <option value="" <%= !huesped || !huesped.sexo ? 'selected' : '' %>>-</option>
+                      <option value="M" <%= huesped && huesped.sexo === 'M' ? 'selected' : '' %>>M</option>
+                      <option value="F" <%= huesped && huesped.sexo === 'F' ? 'selected' : '' %>>F</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <div>
+                      <label for="campoRH" class="form-label">Grupo Sanguíneo</label>
+                      <input type="text" name="grupo_sanguineo" id="campoRH" value="<%= huesped ? huesped.grupo_sanguineo : '' %>" class="form-input">
+                    </div>
+                    <div>
+                      <label for="campoEstatura" class="form-label">Estatura (m)</label>
+                      <input type="text" name="estatura" id="campoEstatura" value="<%= huesped ? huesped.estatura : '' %>" class="form-input">
+                    </div>
+                  </div>
+                  <div>
+                    <div>
+                      <label for="campoExpedicion" class="form-label">Fecha de Expedición</label>
+                      <input type="date" name="fecha_expedicion" id="campoExpedicion" value="<%= huesped ? huesped.fecha_expedicion : '' %>" class="form-input">
+                    </div>
+                    <div>
+                      <label for="campoLugar" class="form-label">Lugar de Expedición</label>
+                      <input type="text" name="lugar_expedicion" id="campoLugar" value="<%= huesped ? huesped.lugar_expedicion : '' %>" class="form-input">
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div>
+                    <label for="campoEmail" class="form-label">Email</label>
+                    <input type="email" name="email" value="<%= huesped ? huesped.email : '' %>" class="form-input">
+                  </div>
+                  <div>
+                    <label for="campoTelefono" class="form-label">Teléfono</label>
+                    <input type="text" name="telefono" value="<%= huesped ? huesped.telefono : '' %>" class="form-input">
+                  </div>
+                </div>
+                <div>
+                  <label for="campoDireccion" class="form-label">Dirección</label>
+                  <input type="text" name="direccion" value="<%= huesped ? huesped.direccion : '' %>" class="form-input">
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <div class="flex gap-2">
+                  <button type="submit" class="btn btn-primary flex-1"><i class="fas fa-save"></i> <%= huesped && huesped.id ? 'Actualizar' : 'Guardar' %></button>
+                  <a href="/huespedes" class="btn btn-outline flex-1">Cancelar</a>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
-        <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="abrirCamara('<%= lado %>')"><i class="fas fa-camera"></i> Tomar Foto</button>
-          <button class="btn btn-outline" onclick="document.getElementById('fileInput_<%= lado %>').click()"><i class="fas fa-upload"></i> Subir Imagen</button>
-          <input type="file" id="fileInput_<%= lado %>" accept="image/*" style="display:none" onchange="procesarArchivo(event, '<%= lado %>')">
-          <button id="btnCapturar_<%= lado %>" class="btn btn-success" style="display:none" onclick="capturarFoto('<%= lado %>')"><i class="fas fa-camera"></i> Capturar</button>
-          <button id="btnRotar_<%= lado %>" class="btn btn-outline" style="display:none" onclick="rotarImagen('<%= lado %>')"><i class="fas fa-redo"></i> Rotar</button>
-          <button id="btnReprocesar_<%= lado %>" class="btn btn-warning" style="display:none" onclick="reprocesarOCR('<%= lado %>')"><i class="fas fa-sync"></i> Reprocesar OCR</button>
-        </div>
-        <div id="ocrStatus_<%= lado %>" style="margin-top:0.75rem; font-size:0.85rem; color:#888;"></div>
-        <div id="ocrWarning_<%= lado %>" style="display:none; margin-top:0.5rem; padding:0.5rem; background:#fef3c7; border-radius:8px; font-size:0.8rem; color:#92400e;"></div>
       </div>
-      <% }) %>
-    </div>
-
-    <div>
-      <form method="POST" action="<%= huesped && huesped.id ? '/huespedes/' + huesped.id + '/editar' : '/huespedes/nuevo' %>">
-        <% if (huesped && huesped.id) { %><input type="hidden" name="_method" value="POST"><% } %>
-        <div class="grid-2">
-          <div class="form-group">
-            <label><i class="fas fa-user"></i> Nombre *</label>
-            <input type="text" name="nombre" class="form-control" id="campoNombre" value="<%= huesped ? huesped.nombre : '' %>" required>
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-user"></i> Apellido *</label>
-            <input type="text" name="apellido" class="form-control" id="campoApellido" value="<%= huesped ? huesped.apellido : '' %>" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label><i class="fas fa-id-card"></i> Número de Cédula *</label>
-          <input type="text" name="numero_cedula" class="form-control" id="campoCedula" value="<%= huesped ? huesped.numero_cedula : '' %>" required>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
-            <input type="date" name="fecha_nacimiento" class="form-control" id="campoNacimiento" value="<%= huesped ? huesped.fecha_nacimiento : '' %>">
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-map-marker-alt"></i> Lugar de Nacimiento</label>
-            <input type="text" name="lugar_nacimiento" class="form-control" id="campoLugarNacimiento" value="<%= huesped ? huesped.lugar_nacimiento : '' %>">
-          </div>
-        </div>
-        <div class="grid-3">
-          <div class="form-group">
-            <label><i class="fas fa-venus-mars"></i> Sexo</label>
-            <select name="sexo" class="form-control" id="campoSexo">
-              <option value="" <%= !huesped || !huesped.sexo ? 'selected' : '' %>>-</option>
-              <option value="M" <%= huesped && huesped.sexo === 'M' ? 'selected' : '' %>>M</option>
-              <option value="F" <%= huesped && huesped.sexo === 'F' ? 'selected' : '' %>>F</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-tint"></i> Grupo Sanguíneo</label>
-            <input type="text" name="grupo_sanguineo" class="form-control" id="campoRH" value="<%= huesped ? huesped.grupo_sanguineo : '' %>">
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-ruler-vertical"></i> Estatura (m)</label>
-            <input type="text" name="estatura" class="form-control" id="campoEstatura" value="<%= huesped ? huesped.estatura : '' %>">
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label><i class="fas fa-calendar-check"></i> Fecha de Expedición</label>
-            <input type="date" name="fecha_expedicion" class="form-control" id="campoExpedicion" value="<%= huesped ? huesped.fecha_expedicion : '' %>">
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-map-marker-alt"></i> Lugar de Expedición</label>
-            <input type="text" name="lugar_expedicion" class="form-control" id="campoLugar" value="<%= huesped ? huesped.lugar_expedicion : '' %>">
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label><i class="fas fa-envelope"></i> Email</label>
-            <input type="email" name="email" class="form-control" value="<%= huesped ? huesped.email : '' %>">
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-phone"></i> Teléfono</label>
-            <input type="text" name="telefono" class="form-control" value="<%= huesped ? huesped.telefono : '' %>">
-          </div>
-        </div>
-        <div class="form-group">
-          <label><i class="fas fa-home"></i> Dirección</label>
-          <input type="text" name="direccion" class="form-control" value="<%= huesped ? huesped.direccion : '' %>">
-        </div>
-        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <%= huesped && huesped.id ? 'Actualizar' : 'Guardar' %></button>
-          <a href="/huespedes" class="btn btn-outline">Cancelar</a>
-        </div>
-      </form>
     </div>
   </div>
 </div>
@@ -135,8 +153,10 @@ async function abrirCamara(lado) {
   try {
     streams[lado] = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
     video.srcObject = streams[lado];
-    container.style.display = 'block';
-    btnCapturar.style.display = 'inline-flex';
+    container.classList.remove('hidden');
+    container.classList.add('block');
+    btnCapturar.classList.remove('hidden');
+    btnCapturar.classList.add('inline-flex');
     document.getElementById('ocrStatus_' + lado).textContent = 'Cámara activada. Enfoque la cédula y capture.';
   } catch (err) {
     document.getElementById('ocrStatus_' + lado).textContent = 'Error al acceder a la cámara: ' + err.message;
@@ -145,16 +165,18 @@ async function abrirCamara(lado) {
 
 function pararCamara(lado) {
   if (streams[lado]) { streams[lado].getTracks().forEach(function(t) { t.stop(); }); streams[lado] = null; }
-  document.getElementById('cameraContainer_' + lado).style.display = 'none';
-  document.getElementById('btnCapturar_' + lado).style.display = 'none';
+  document.getElementById('cameraContainer_' + lado).classList.add('hidden');
+  document.getElementById('cameraContainer_' + lado).classList.remove('block');
+  document.getElementById('btnCapturar_' + lado).classList.add('hidden');
+  document.getElementById('btnCapturar_' + lado).classList.remove('inline-flex');
 }
 
 function mostrarPreview(lado, dataUrl) {
   capturedImages[lado] = dataUrl;
-  document.getElementById('photoPreview_' + lado).style.display = 'block';
+  document.getElementById('photoPreview_' + lado).classList.remove('hidden');
   document.getElementById('photoImg_' + lado).src = dataUrl;
-  document.getElementById('btnReprocesar_' + lado).style.display = 'inline-flex';
-  document.getElementById('btnRotar_' + lado).style.display = 'inline-flex';
+  document.getElementById('btnReprocesar_' + lado).classList.remove('hidden');
+  document.getElementById('btnRotar_' + lado).classList.remove('hidden');
 }
 
 function capturarFoto(lado) {
@@ -197,7 +219,7 @@ function rotarImagen(lado) {
 
 async function procesarOCR(lado, imageData) {
   const status = document.getElementById('ocrStatus_' + lado);
-  status.innerHTML = '<span class="spinner"></span> Procesando OCR...';
+  status.innerHTML = '<span class="spinner w-3 h-3 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></span> Procesando OCR...';
 
   try {
     const blob = await (await fetch(imageData)).blob();
@@ -218,21 +240,21 @@ async function procesarOCR(lado, imageData) {
       if (ocrData.success && ocrData.datos) {
         llenarDatos(ocrData.datos);
         const motor = { tesseract: 'Tesseract', barcode: 'código de barras', 'barcode+tesseract': 'código de barras + Tesseract' }[ocrData.engine] || ocrData.engine;
-        status.innerHTML = '<i class="fas fa-check-circle" style="color:#059669"></i> Datos extraídos (' + motor + ')' + (ocrData.confidence ? ' · confianza OCR: ' + ocrData.confidence + '%' : '');
+        status.innerHTML = '<i class="fas fa-check-circle text-primary-600"></i> Datos extraídos (' + motor + ')' + (ocrData.confidence ? ' · confianza OCR: ' + ocrData.confidence + '%' : '');
         if (ocrData.warning) {
-          document.getElementById('ocrWarning_' + lado).style.display = 'block';
+          document.getElementById('ocrWarning_' + lado).classList.remove('hidden');
           document.getElementById('ocrWarning_' + lado).innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + ocrData.warning;
         } else {
-          document.getElementById('ocrWarning_' + lado).style.display = 'none';
+          document.getElementById('ocrWarning_' + lado).classList.add('hidden');
         }
       } else {
-        status.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#d97706"></i> No se pudieron extraer suficientes datos de esta imagen.';
-        document.getElementById('ocrWarning_' + lado).style.display = 'block';
+        status.innerHTML = '<i class="fas fa-exclamation-triangle text-orange-600"></i> No se pudieron extraer suficientes datos de esta imagen.';
+        document.getElementById('ocrWarning_' + lado).classList.remove('hidden');
         document.getElementById('ocrWarning_' + lado).innerHTML = '<i class="fas fa-info-circle"></i> Pruebe con más luz, sin reflejos, o use el botón "Rotar" si la imagen no quedó derecha. También puede completar los datos manualmente.';
       }
     }
   } catch (err) {
-    status.innerHTML = '<i class="fas fa-times-circle" style="color:#dc2626"></i> Error de OCR: ' + err.message;
+    status.innerHTML = '<i class="fas fa-times-circle text-red-600"></i> Error de OCR: ' + err.message;
   }
 }
 
@@ -261,8 +283,8 @@ function llenarDatos(datos) {
   idsActualizados.forEach(function(id) {
     const el = document.getElementById(id);
     if (el && el.value) {
-      el.classList.add('result-highlight');
-      setTimeout(function() { el.classList.remove('result-highlight'); }, 1500);
+      el.classList.add('bg-primary-50');
+      setTimeout(function() { el.classList.remove('bg-primary-50'); }, 1500);
     }
   });
 }
@@ -275,4 +297,5 @@ function reprocesarOCR(lado) {
   if (capturedImages[lado]) procesarOCR(lado, capturedImages[lado]);
 }
 </script>
+
 <%- include('../partials/footer') %>

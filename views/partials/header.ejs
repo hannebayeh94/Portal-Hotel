@@ -3,403 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hotel Admin Portal</title>
+  <title><%= hotel.nombre %></title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <style>
-    :root {
-      --bg: #f6f2ea;
-      --surface: #ffffff;
-      --surface-2: #f0ebe0;
-      --surface-hover: #ece5d6;
-      --border: #e3dac7;
-      --border-strong: #d1c3a4;
-      --text: #2b2620;
-      --text-muted: #78705f;
-      --text-faint: #a89c85;
-
-      --primary: #1f4d3a;
-      --primary-strong: #163a2b;
-      --primary-soft: color-mix(in srgb, var(--primary) 12%, var(--surface));
-
-      --success: #3f7a52;
-      --success-soft: color-mix(in srgb, var(--success) 15%, var(--surface));
-      --warning: #b5791f;
-      --warning-soft: color-mix(in srgb, var(--warning) 15%, var(--surface));
-      --danger: #af4632;
-      --danger-soft: color-mix(in srgb, var(--danger) 15%, var(--surface));
-      --info: #4f7182;
-      --info-soft: color-mix(in srgb, var(--info) 15%, var(--surface));
-      --gray: #8a7f6d;
-      --gray-soft: color-mix(in srgb, var(--gray) 15%, var(--surface));
-
-      --radius-sm: 8px;
-      --radius-md: 10px;
-      --radius-lg: 12px;
-      --radius-xl: 14px;
-
-      --shadow-sm: 0 1px 2px rgba(43,38,32,0.05);
-      --shadow-md: 0 6px 20px -8px rgba(43,38,32,0.16);
-      --shadow-glow: 0 0 0 3px var(--primary-soft);
-
-      --font: 'Inter', system-ui, -apple-system, sans-serif;
-      --font-display: 'Fraunces', 'Georgia', serif;
-
-      --sidebar-w: 252px;
-      --bottomnav-h: 62px;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    ::selection { background: var(--primary); color: #fff; }
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
-    html { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    a { color: inherit; }
-    :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
-    h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; font-weight: 600; }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ---------- Sidebar (tablet landscape / desktop) ---------- */
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--surface);
-      min-height: 100vh;
-      position: fixed;
-      left: 0; top: 0;
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid var(--border);
-    }
-    .sidebar .brand { padding: 1.5rem 1.25rem 1.15rem; display: flex; align-items: center; gap: 0.7rem; }
-    .sidebar .brand .mark {
-      width: 36px; height: 36px; border-radius: 9px;
-      background: var(--primary);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .sidebar .brand .mark i { color: #fff; font-size: 1rem; }
-    .sidebar .brand h2 { color: var(--text); font-size: 1.15rem; font-weight: 600; font-family: var(--font-display); line-height: 1.15; }
-    .sidebar .brand span { color: var(--text-faint); font-size: 0.72rem; font-weight: 500; font-family: var(--font); }
-
-    .sidebar nav { flex: 1; padding: 0.5rem 0.75rem; overflow-y: auto; }
-    .sidebar .nav-section-label { padding: 1rem 0.6rem 0.4rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); }
-    .sidebar .nav-item {
-      display: flex; align-items: center; gap: 0.7rem;
-      padding: 0.58rem 0.7rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.86rem; font-weight: 500;
-      border-radius: var(--radius-sm);
-      margin-bottom: 0.1rem;
-      position: relative;
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-    .sidebar .nav-item i { width: 18px; text-align: center; font-size: 0.92rem; color: var(--text-faint); transition: color 0.15s ease; }
-    .sidebar .nav-item:hover { background: var(--surface-2); color: var(--text); }
-    .sidebar .nav-item.active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
-    .sidebar .nav-item.active i { color: var(--primary); }
-    .sidebar .nav-item.active::before {
-      content: ''; position: absolute; left: -0.75rem; top: 50%; transform: translateY(-50%);
-      width: 3px; height: 60%; background: var(--primary); border-radius: 0 3px 3px 0;
-    }
-
-    .sidebar .footer-zone { padding: 0.85rem; border-top: 1px solid var(--border); }
-    .sidebar .user-chip { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; border-radius: var(--radius-sm); margin-bottom: 0.25rem; }
-    .sidebar .user-chip .avatar {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: var(--surface-2); color: var(--text);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.76rem; font-weight: 700; border: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .sidebar .user-chip .who .name { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sidebar .user-chip .who .role { color: var(--text-faint); font-size: 0.72rem; }
-    .logout-link { display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.6rem; color: var(--danger); text-decoration: none; font-size: 0.82rem; font-weight: 500; border-radius: var(--radius-sm); transition: background-color 0.15s ease; }
-    .logout-link:hover { background: var(--danger-soft); }
-
-    /* ---------- Main content ---------- */
-    .main-content { margin-left: var(--sidebar-w); padding: 1.65rem 2rem 3rem; }
-    .main-content-full { margin-left: 0; }
-
-    .topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.6rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
-    .topbar h1 { font-size: 1.5rem; color: var(--text); display: flex; align-items: center; gap: 0.55rem; }
-    .topbar h1 i { color: var(--primary); font-size: 1.2rem; }
-    .topbar .user-info { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 0.88rem; }
-
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1.4rem; margin-bottom: 1.4rem; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
-    .card-header h3 { font-family: var(--font); font-size: 0.95rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
-    .card-header h3 i { color: var(--primary); }
-
-    /* ---------- Buttons ---------- */
-    .btn {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.6rem 1.1rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem; font-weight: 600;
-      border: 1px solid transparent;
-      cursor: pointer;
-      text-decoration: none;
-      font-family: var(--font);
-      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-      white-space: nowrap;
-      min-height: 40px;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-strong); }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { background: #325f3f; }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-danger:hover { background: #8f3826; }
-    .btn-warning { background: var(--warning); color: #fff; }
-    .btn-warning:hover { background: #93611a; }
-    .btn-sm { padding: 0.42rem 0.75rem; font-size: 0.78rem; min-height: 32px; }
-    .btn-outline { background: transparent; border: 1px solid var(--border-strong); color: var(--text-muted); }
-    .btn-outline:hover { background: var(--surface-2); color: var(--text); }
-
-    /* ---------- Forms ---------- */
-    .form-group { margin-bottom: 1.05rem; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
-    .form-control {
-      width: 100%; padding: 0.6rem 0.8rem;
-      border: 1.5px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      font-family: var(--font);
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-      min-height: 42px;
-    }
-    .form-control::placeholder { color: var(--text-faint); }
-    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: var(--shadow-glow); }
-    .form-control:read-only { background: var(--surface-2); }
-    select.form-control { appearance: auto; cursor: pointer; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
-    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
-
-    /* ---------- Tables ---------- */
-    .table-container { overflow-x: auto; border-radius: var(--radius-md); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
-    table th { background: var(--surface-2); padding: 0.65rem 0.9rem; text-align: left; font-weight: 700; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    table td { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--border); color: var(--text); font-variant-numeric: tabular-nums; }
-    table tr:last-child td { border-bottom: none; }
-    table tr:hover td { background: var(--surface-2); }
-
-    /* ---------- Badges ---------- */
-    .badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.65rem 0.28rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
-    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-    .badge-success { background: var(--success-soft); color: var(--success); }
-    .badge-warning { background: var(--warning-soft); color: var(--warning); }
-    .badge-danger { background: var(--danger-soft); color: var(--danger); }
-    .badge-info { background: var(--info-soft); color: var(--info); }
-    .badge-gray { background: var(--gray-soft); color: var(--gray); }
-    button.badge { border: none; cursor: pointer; transition: filter 0.15s ease; font-family: var(--font); }
-    button.badge:hover { filter: brightness(0.95); }
-
-    /* ---------- Stat cards ---------- */
-    .stat-card { padding: 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
-    .stat-card .icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, currentColor 14%, transparent); margin-bottom: 0.8rem; font-size: 1rem; }
-    .stat-card .number { font-size: 1.75rem; font-weight: 700; color: var(--text); font-family: var(--font-display); font-variant-numeric: tabular-nums; }
-    .stat-card .label { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem; font-weight: 500; }
-
-    /* ---------- Alerts ---------- */
-    .alert { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-size: 0.88rem; font-weight: 500; }
-    .alert-error { background: var(--danger-soft); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
-    .alert-success { background: var(--success-soft); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 30%, transparent); }
-
-    /* ---------- Pagination ---------- */
-    .pagination { display: flex; gap: 0.4rem; align-items: center; margin-top: 1.2rem; flex-wrap: wrap; }
-    .pagination a, .pagination span { display:inline-flex; align-items:center; justify-content:center; min-width: 36px; height: 36px; padding: 0 0.6rem; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; }
-    .pagination a { background: var(--surface); border: 1px solid var(--border); }
-    .pagination a:hover { background: var(--surface-2); }
-    .pagination .active { background: var(--primary); color: #fff; border-color: transparent; }
-
-    /* ---------- Modal ---------- */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(43,38,32,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
-    .modal.active { display: flex; }
-    .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 1.75rem; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
-    .modal-close { float: right; background: var(--surface-2); border: 1px solid var(--border); width: 32px; height: 32px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
-    .modal-close:hover { color: var(--text); }
-
-    /* ---------- Search / tabs ---------- */
-    .search-box { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-    .search-box input { padding: 0.6rem 1rem; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius-sm); font-size: 0.9rem; min-width: 250px; font-family: var(--font); min-height: 42px; }
-    .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: var(--shadow-glow); }
-
-    .tabs { display: flex; gap: 0.25rem; background: var(--surface-2); border: 1px solid var(--border); padding: 0.25rem; border-radius: var(--radius-md); margin-bottom: 1.4rem; overflow-x: auto; }
-    .tabs a { padding: 0.5rem 1rem; text-decoration: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; border-radius: var(--radius-sm); white-space: nowrap; transition: background-color 0.15s ease, color 0.15s ease; }
-    .tabs a:hover { color: var(--text); }
-    .tabs a.active { color: #fff; background: var(--primary); }
-
-    /* ---------- Toast ---------- */
-    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; display:flex; align-items:center; gap:0.6rem; background: var(--text); color: var(--bg); padding: 0.8rem 1.3rem; border-radius: var(--radius-md); box-shadow: var(--shadow-md); z-index: 300; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; font-size: 0.88rem; font-weight: 500; }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.error { background: var(--danger); color: #fff; }
-
-    .spinner { display: inline-block; width: 1.2rem; height: 1.2rem; border: 2.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
-
-    /* ---------- OCR capture widgets ---------- */
-    .camera-container { position: relative; width: 100%; max-width: 500px; margin: 0 auto; }
-    .camera-container video { width: 100%; border-radius: var(--radius-md); background: #000; }
-    .camera-container canvas { display: none; }
-    .ocr-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 3px dashed color-mix(in srgb, var(--primary) 55%, transparent); border-radius: var(--radius-md); pointer-events: none; }
-    .result-highlight { animation: resultPulse 0.6s ease-in-out; }
-    @keyframes resultPulse { 0% { background-color: var(--primary-soft); } 100% { background-color: transparent; } }
-
-    /* ---------- Utilities ---------- */
-    .flex { display: flex; }
-    .flex-1 { flex: 1; }
-    .gap-2 { gap: 0.5rem; }
-    .gap-3 { gap: 0.75rem; }
-    .gap-4 { gap: 1rem; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .mt-2 { margin-top: 0.5rem; }
-    .mt-3 { margin-top: 0.75rem; }
-    .mt-4 { margin-top: 1rem; }
-    .mb-2 { margin-bottom: 0.5rem; }
-    .mb-3 { margin-bottom: 0.75rem; }
-    .mb-4 { margin-bottom: 1rem; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .text-sm { font-size: 0.83rem; }
-    .text-xs { font-size: 0.74rem; }
-    .text-muted { color: var(--text-muted); }
-    .w-full { width: 100%; }
-    .hidden { display: none; }
-
-    /* ---------- Bottom nav (phones & portrait tablets) ---------- */
-    .bottom-nav { display: none; }
-    .more-sheet, .more-backdrop { display: none; }
-
-    @media (max-width: 880px) {
-      .sidebar { display: none; }
-      .main-content { margin-left: 0; padding: 1.1rem 1.1rem calc(var(--bottomnav-h) + 1.5rem); }
-      .grid-2 { grid-template-columns: 1fr; }
-      .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
-      .search-box { flex-direction: column; align-items: stretch; }
-      .search-box input { min-width: auto; width: 100%; }
-
-      .bottom-nav {
-        display: flex;
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        padding: 0.4rem 0.25rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
-        height: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px));
-      }
-      .bottom-nav a, .bottom-nav button {
-        flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem;
-        text-decoration: none; color: var(--text-faint); background: none; border: none; font-family: var(--font);
-        font-size: 0.66rem; font-weight: 600; padding: 0.3rem 0.2rem; border-radius: var(--radius-sm); cursor: pointer;
-      }
-      .bottom-nav i { font-size: 1.15rem; }
-      .bottom-nav a.active, .bottom-nav button.active { color: var(--primary); }
-
-      .more-backdrop.open { display: block; position: fixed; inset: 0; z-index: 199; background: rgba(43,38,32,0.4); animation: fadeIn 0.2s ease; }
-      .more-sheet {
-        display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
-        background: var(--surface); border-radius: 18px 18px 0 0; border: 1px solid var(--border); border-bottom: none;
-        padding: 0.5rem 0.5rem calc(1rem + env(safe-area-inset-bottom, 0px));
-        transform: translateY(100%); transition: transform 0.25s ease;
-        max-height: 75vh; overflow-y: auto;
-      }
-      .more-sheet.open { transform: translateY(0); animation: slideUp 0.25s ease; }
-      .more-sheet .handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 4px; margin: 0.5rem auto 0.75rem; }
-      .more-sheet .nav-item { display: flex; align-items: center; gap: 0.85rem; padding: 0.75rem 1rem; color: var(--text); text-decoration: none; font-size: 0.92rem; font-weight: 500; border-radius: var(--radius-sm); }
-      .more-sheet .nav-item i { width: 20px; text-align: center; color: var(--text-muted); }
-      .more-sheet .nav-item.active { background: var(--primary-soft); color: var(--primary-strong); }
-      .more-sheet .nav-item.active i { color: var(--primary); }
-      .more-sheet hr { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0.5rem; }
-      .more-sheet .sheet-user { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 1rem; }
-      .more-sheet .sheet-user .avatar { width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
-      .more-sheet .sheet-user .role { color: var(--text-faint); font-size: 0.75rem; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
-<div class="more-backdrop" id="moreBackdrop" onclick="closeMoreSheet()"></div>
+
+<div class="fixed inset-0 bg-black/30 hidden z-40" id="moreBackdrop" onclick="closeMoreSheet()"></div>
 
 <% if (typeof user !== 'undefined' && user) { %>
-<div class="sidebar">
-  <div class="brand">
-    <div class="mark"><i class="fas fa-hotel"></i></div>
-    <div>
-      <h2>HotelAdmin</h2>
-      <span>Portal de Gestión</span>
-    </div>
-  </div>
-  <nav>
-    <a href="/" class="nav-item <%= path === '/' ? 'active' : '' %>"><i class="fas fa-chart-pie"></i> Dashboard</a>
-    <a href="/huespedes" class="nav-item <%= path.startsWith('/huespedes') ? 'active' : '' %>"><i class="fas fa-users"></i> Huéspedes</a>
-    <a href="/habitaciones" class="nav-item <%= path.startsWith('/habitaciones') ? 'active' : '' %>"><i class="fas fa-bed"></i> Habitaciones</a>
-    <a href="/reservas" class="nav-item <%= path.startsWith('/reservas') ? 'active' : '' %>"><i class="fas fa-calendar-check"></i> Reservas</a>
-    <a href="/admin/facturacion" class="nav-item <%= path.includes('/facturacion') ? 'active' : '' %>"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
-    <div class="nav-section-label">Administración</div>
-    <a href="/admin/tarifas" class="nav-item <%= path.includes('/tarifas') ? 'active' : '' %>"><i class="fas fa-tags"></i> Tarifas</a>
-    <a href="/admin/temporadas" class="nav-item <%= path.includes('/temporadas') ? 'active' : '' %>"><i class="fas fa-calendar-alt"></i> Temporadas</a>
-    <a href="/admin/promociones" class="nav-item <%= path.includes('/promociones') ? 'active' : '' %>"><i class="fas fa-percent"></i> Promociones</a>
-    <a href="/admin/reportes" class="nav-item <%= path.includes('/reportes') ? 'active' : '' %>"><i class="fas fa-chart-bar"></i> Reportes</a>
-  </nav>
-  <div class="footer-zone">
-    <div class="user-chip">
-      <div class="avatar"><%= (user.nombre || '?').charAt(0).toUpperCase() %></div>
-      <div class="who">
-        <div class="name"><%= user.nombre %></div>
-        <div class="role"><%= user.rol || 'Administrador' %></div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-md bg-primary-600 flex items-center justify-center">
+          <i class="fas fa-hotel text-white"></i>
+        </div>
+        <div>
+          <h2><%= hotel.nombre %></h2>
+          <span>Portal de Gestión</span>
+        </div>
       </div>
     </div>
-    <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
-  </div>
-</div>
-
-<nav class="bottom-nav">
-  <a href="/" class="<%= path === '/' ? 'active' : '' %>"><i class="fas fa-chart-pie"></i> Inicio</a>
-  <a href="/huespedes" class="<%= path.startsWith('/huespedes') ? 'active' : '' %>"><i class="fas fa-users"></i> Huéspedes</a>
-  <a href="/habitaciones" class="<%= path.startsWith('/habitaciones') ? 'active' : '' %>"><i class="fas fa-bed"></i> Habitac.</a>
-  <a href="/reservas" class="<%= path.startsWith('/reservas') ? 'active' : '' %>"><i class="fas fa-calendar-check"></i> Reservas</a>
-  <button type="button" onclick="openMoreSheet()" class="<%= (path.includes('/tarifas') || path.includes('/temporadas') || path.includes('/promociones') || path.includes('/reportes') || path.includes('/facturacion')) ? 'active' : '' %>">
-    <i class="fas fa-ellipsis"></i> Más
-  </button>
-</nav>
-
-<div class="more-sheet" id="moreSheet">
-  <div class="handle"></div>
-  <a href="/admin/facturacion" class="nav-item <%= path.includes('/facturacion') ? 'active' : '' %>"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
-  <a href="/admin/tarifas" class="nav-item <%= path.includes('/tarifas') ? 'active' : '' %>"><i class="fas fa-tags"></i> Tarifas</a>
-  <a href="/admin/temporadas" class="nav-item <%= path.includes('/temporadas') ? 'active' : '' %>"><i class="fas fa-calendar-alt"></i> Temporadas</a>
-  <a href="/admin/promociones" class="nav-item <%= path.includes('/promociones') ? 'active' : '' %>"><i class="fas fa-percent"></i> Promociones</a>
-  <a href="/admin/reportes" class="nav-item <%= path.includes('/reportes') ? 'active' : '' %>"><i class="fas fa-chart-bar"></i> Reportes</a>
-  <hr>
-  <div class="sheet-user">
-    <div class="avatar"><%= (user.nombre || '?').charAt(0).toUpperCase() %></div>
-    <div>
-      <div style="font-weight:600; font-size:0.88rem;"><%= user.nombre %></div>
-      <div class="role"><%= user.rol || 'Administrador' %></div>
+    <nav>
+      <a href="/" class="nav-item <%= path === '/' || path === '' ? 'active' : '' %>"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="/checkin" class="nav-item <%= path.startsWith('/checkin') ? 'active' : '' %>"><i class="fas fa-bolt"></i> Check-in Exprés</a>
+      <a href="/huespedes" class="nav-item <%= path.startsWith('/huespedes') ? 'active' : '' %>"><i class="fas fa-users"></i> Huéspedes</a>
+      <a href="/habitaciones" class="nav-item <%= path.startsWith('/habitaciones') ? 'active' : '' %>"><i class="fas fa-bed"></i> Habitaciones</a>
+      <a href="/reservas" class="nav-item <%= path.startsWith('/reservas') ? 'active' : '' %>"><i class="fas fa-calendar-check"></i> Reservas</a>
+      <a href="/admin/facturacion" class="nav-item <%= path.includes('/facturacion') ? 'active' : '' %>"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+      <div class="group-label">Administración</div>
+      <a href="/admin/tarifas" class="nav-item <%= path.includes('/tarifas') ? 'active' : '' %>"><i class="fas fa-tags"></i> Tarifas</a>
+      <a href="/admin/temporadas" class="nav-item <%= path.includes('/temporadas') ? 'active' : '' %>"><i class="fas fa-calendar-alt"></i> Temporadas</a>
+      <a href="/admin/promociones" class="nav-item <%= path.includes('/promociones') ? 'active' : '' %>"><i class="fas fa-percent"></i> Promociones</a>
+      <a href="/admin/reportes" class="nav-item <%= path.includes('/reportes') ? 'active' : '' %>"><i class="fas fa-chart-bar"></i> Reportes</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="flex items-center gap-2 text-sm">
+        <div class="w-8 h-8 rounded-md bg-gray-100 flex items-center justify-center font-medium text-gray-500">
+          <%= (user.nombre || '?').charAt(0).toUpperCase() %>
+        </div>
+        <div>
+          <div class="font-medium"><%= user.nombre %></div>
+          <div class="text-xs text-gray-400"><%= user.rol || 'Administrador' %></div>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <a href="/perfil" class="btn btn-outline btn-sm flex-1 text-center" title="Configurar cuenta"><i class="fas fa-user-cog"></i> Perfil</a>
+        <a href="/logout" class="btn btn-danger btn-sm" title="Cerrar Sesión"><i class="fas fa-sign-out-alt"></i></a>
+      </div>
     </div>
-  </div>
-  <a href="/logout" class="nav-item" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
-</div>
-<% } %>
+  </aside>
 
-<div class="main-content <%= (typeof user === 'undefined' || !user) ? 'main-content-full' : '' %>">
+  <nav class="bottom-nav">
+    <a href="/" class="<%= path === '/' || path === '' ? 'active' : '' %>"><i class="fas fa-chart-pie"></i> Inicio</a>
+    <a href="/checkin" class="<%= path.startsWith('/checkin') ? 'active' : '' %>"><i class="fas fa-bolt"></i> Check-in</a>
+    <a href="/huespedes" class="<%= path.startsWith('/huespedes') ? 'active' : '' %>"><i class="fa fa-users"></i> Huéspedes</a>
+    <a href="/reservas" class="<%= path.startsWith('/reservas') ? 'active' : '' %>"><i class="fas fa-calendar-check"></i> Reservas</a>
+    <button type="button" onclick="openMoreSheet()"><i class="fas fa-ellipsis-v"></i></button>
+  </nav>
+
+  <main class="main-content">
+<% } else { %>
+    <main>
+<% } %>

@@ -45,10 +45,8 @@
   <div class="sheet">
   <div class="header">
     <div>
-      <div class="hotel"><div class="mark"><i class="fas fa-hotel"></i></div> Hotel<span>Admin</span></div>
-      <p style="color:#8a8a99; margin-top:0.5rem;">NIT: 900.123.456-7</p>
-      <p style="color:#8a8a99;">Calle 123 # 45-67, Bogotá, Colombia</p>
-      <p style="color:#8a8a99;">Tel: (601) 234 5678 - info@hoteladmin.com</p>
+      <div class="hotel"><div class="mark"><i class="fas fa-hotel"></i></div> <%= hotel.nombre %></div>
+      <p style="color:#8a8a99; margin-top:0.5rem;">NIT: <%= hotel.nit %></p>
     </div>
     <div class="factura-num">
       <h2>FACTURA</h2>
@@ -107,7 +105,7 @@
   <div class="footer">
     <p>Esta factura se asimila en todos sus efectos a una letra de cambio según el artículo 774 del Código de Comercio de Colombia.</p>
     <p style="margin-top:0.5rem;">Estado: <span class="badge"><%= factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1) %></span></p>
-    <p style="margin-top: 1.5rem;">Generado por HotelAdmin Portal - <%= new Date().toLocaleString('es-CO') %></p>
+    <p style="margin-top: 1.5rem;">Generado por <%= hotel.nombre %> - <%= new Date().toLocaleString('es-CO') %></p>
   </div>
   </div>
 </body>

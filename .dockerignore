@@ -5,3 +5,4 @@ public/uploads/*
 !public/uploads/.gitkeep
 .env
 *.log
+spa.traineddata

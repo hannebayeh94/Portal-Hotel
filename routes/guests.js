@@ -1,5 +1,6 @@
 const express = require('express');
 const { dbAll, dbGet, dbRun } = require('../models/database');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
 router.get('/', (req, res) => {
@@ -28,16 +29,37 @@ router.get('/', (req, res) => {
   res.render('huespedes/index', { huespedes, search, page, totalPages: Math.ceil(total.count / limit), total: total.count });
 });
 
+router.get('/exportar/csv', (req, res) => {
+  const huespedes = dbAll('SELECT * FROM huespedes ORDER BY nombre ASC, apellido ASC');
+
+  let csv = '\uFEFFID;Nombre;Apellido;Cédula;Fecha Nacimiento;Sexo;RH;Email;Teléfono;Dirección;Fecha Registro\n';
+  huespedes.forEach(h => {
+    csv += `"${h.id}";"${h.nombre}";"${h.apellido}";"${h.numero_cedula}";"${h.fecha_nacimiento || ''}";"${h.sexo || ''}";"${h.grupo_sanguineo || ''}";"${h.email || ''}";"${h.telefono || ''}";"${h.direccion || ''}";"${h.created_at}"\n`;
+  });
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="huespedes_' + new Date().toISOString().split('T')[0] + '.csv"');
+  res.send(csv);
+});
+
 router.get('/nuevo', (req, res) => {
   res.render('huespedes/nuevo', { huesped: null, error: null });
 });
 
-router.post('/nuevo', (req, res) => {
-  const { nombre, apellido, numero_cedula, fecha_nacimiento, lugar_nacimiento, sexo, grupo_sanguineo, estatura, fecha_expedicion, lugar_expedicion, email, telefono, direccion } = req.body;
-
-  if (!nombre || !apellido || !numero_cedula) {
-    return res.render('huespedes/nuevo', { huesped: req.body, error: 'Nombre, apellido y cédula son obligatorios' });
+router.post('/nuevo', [
+  body('nombre').trim().notEmpty().withMessage('El nombre es obligatorio'),
+  body('apellido').trim().notEmpty().withMessage('El apellido es obligatorio'),
+  body('numero_cedula').trim().notEmpty().withMessage('La cédula es obligatoria'),
+  body('email').optional({ nullable: true }).trim().isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('telefono').optional({ nullable: true }).trim().isLength({ max: 20 }).withMessage('Teléfono inválido'),
+  body('direccion').optional({ nullable: true }).trim(),
+], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('huespedes/nuevo', { huesped: req.body, error: errors.array()[0].msg });
   }
+
+  const { nombre, apellido, numero_cedula, fecha_nacimiento, lugar_nacimiento, sexo, grupo_sanguineo, estatura, fecha_expedicion, lugar_expedicion, email, telefono, direccion } = req.body;
 
   const existing = dbGet('SELECT id FROM huespedes WHERE numero_cedula = ?', [numero_cedula]);
   if (existing) {
@@ -69,12 +91,20 @@ router.get('/:id/editar', (req, res) => {
   res.render('huespedes/nuevo', { huesped, error: null });
 });
 
-router.post('/:id/editar', (req, res) => {
-  const { nombre, apellido, numero_cedula, fecha_nacimiento, lugar_nacimiento, sexo, grupo_sanguineo, estatura, fecha_expedicion, lugar_expedicion, email, telefono, direccion } = req.body;
-  if (!nombre || !apellido || !numero_cedula) {
-    const huesped = { id: req.params.id, ...req.body };
-    return res.render('huespedes/nuevo', { huesped, error: 'Nombre, apellido y cédula son obligatorios' });
+router.post('/:id/editar', [
+  body('nombre').trim().notEmpty().withMessage('El nombre es obligatorio'),
+  body('apellido').trim().notEmpty().withMessage('El apellido es obligatorio'),
+  body('numero_cedula').trim().notEmpty().withMessage('La cédula es obligatoria'),
+  body('email').optional({ nullable: true }).trim().isEmail().withMessage('Email inválido').normalizeEmail(),
+  body('telefono').optional({ nullable: true }).trim().isLength({ max: 20 }).withMessage('Teléfono inválido'),
+  body('direccion').optional({ nullable: true }).trim(),
+], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('huespedes/nuevo', { huesped: { id: req.params.id, ...req.body }, error: errors.array()[0].msg });
   }
+
+  const { nombre, apellido, numero_cedula, fecha_nacimiento, lugar_nacimiento, sexo, grupo_sanguineo, estatura, fecha_expedicion, lugar_expedicion, email, telefono, direccion } = req.body;
   dbRun(`
     UPDATE huespedes SET nombre=?, apellido=?, numero_cedula=?, fecha_nacimiento=?, lugar_nacimiento=?, sexo=?,
     grupo_sanguineo=?, estatura=?, fecha_expedicion=?, lugar_expedicion=?, email=?, telefono=?, direccion=?,

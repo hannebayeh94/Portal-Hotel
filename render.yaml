@@ -1,0 +1,26 @@
+# Render Blueprint para Mi Casita B&V
+# Nota: los discos persistentes en Render requieren un plan pago (starter o superior).
+# Si usas el plan free, elimina el bloque "disk" (los datos se reinician en cada deploy).
+services:
+  - type: web
+    name: mi-casita-bv
+    runtime: docker
+    plan: starter
+    region: virginia
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DB_PATH
+        value: /var/data/hotel.db
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+    disk:
+      name: hotel-data
+      mountPath: /var/data
+      sizeGB: 1

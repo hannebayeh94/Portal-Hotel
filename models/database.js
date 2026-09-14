@@ -9,7 +9,9 @@ let db = null;
 function saveDb() {
   const data = db.export();
   const buffer = Buffer.from(data);
-  fs.writeFileSync(DB_PATH, buffer);
+  const tmpPath = `${DB_PATH}.tmp`;
+  fs.writeFileSync(tmpPath, buffer);
+  fs.renameSync(tmpPath, DB_PATH);
 }
 
 function dbAll(sql, params = []) {
@@ -205,37 +207,29 @@ async function initialize() {
 
   const existingRooms = dbGet('SELECT COUNT(*) as count FROM habitaciones');
   if (existingRooms.count === 0) {
-    const roomTypes = [
-      { numero: '101', tipo: 'individual', precio: 120000, capacidad: 1, descripcion: 'Habitación individual cómoda y funcional', servicios: '["TV","WiFi","Baño privado","Aire acondicionado"]' },
-      { numero: '102', tipo: 'individual', precio: 120000, capacidad: 1, descripcion: 'Habitación individual con vista interior', servicios: '["TV","WiFi","Baño privado"]' },
-      { numero: '201', tipo: 'doble', precio: 180000, capacidad: 2, descripcion: 'Habitación doble ideal para parejas', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Mini bar"]' },
-      { numero: '202', tipo: 'doble', precio: 180000, capacidad: 2, descripcion: 'Habitación doble con dos camas', servicios: '["TV","WiFi","Baño privado","Aire acondicionado"]' },
-      { numero: '203', tipo: 'doble', precio: 200000, capacidad: 2, descripcion: 'Habitación doble superior', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Mini bar","Balcón"]' },
-      { numero: '301', tipo: 'suite', precio: 350000, capacidad: 3, descripcion: 'Suite con sala de estar independiente', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Mini bar","Balcón","Jacuzzi"]' },
-      { numero: '302', tipo: 'suite', precio: 400000, capacidad: 4, descripcion: 'Suite presidencial', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Mini bar","Balcón","Jacuzzi","Sala de estar"]' },
-      { numero: '401', tipo: 'familiar', precio: 280000, capacidad: 5, descripcion: 'Habitación familiar amplia', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Cocina pequeña","Balcón"]' },
-      { numero: '402', tipo: 'familiar', precio: 300000, capacidad: 6, descripcion: 'Habitación familiar con vista al mar', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Cocina","Balcón","Sala de estar"]' },
-      { numero: '501', tipo: 'presidencial', precio: 600000, capacidad: 4, descripcion: 'Suite presidencial de lujo', servicios: '["TV","WiFi","Baño privado","Aire acondicionado","Mini bar","Balcón","Jacuzzi","Sala de estar","Mayordomo"]' },
-    ];
+    const roomTypes = [];
+    for (let i = 1; i <= 7; i++) {
+      roomTypes.push({
+        numero: String(100 + i),
+        tipo: 'doble',
+        precio: 35000,
+        descripcion: 'Habitación con aire acondicionado',
+        servicios: '["Aire acondicionado"]'
+      });
+    }
+    for (let i = 1; i <= 5; i++) {
+      roomTypes.push({
+        numero: String(107 + i),
+        tipo: 'doble',
+        precio: 25000,
+        descripcion: 'Habitación con ventilador',
+        servicios: '["Ventilador"]'
+      });
+    }
     for (const r of roomTypes) {
       dbRun('INSERT INTO habitaciones (numero, tipo, precio_base, capacidad, descripcion, servicios) VALUES (?, ?, ?, ?, ?, ?)',
-        [r.numero, r.tipo, r.precio, r.capacidad, r.descripcion, r.servicios]);
+        [r.numero, r.tipo, r.precio, 2, r.descripcion, r.servicios]);
     }
-  }
-
-  const existingSeasons = dbGet('SELECT COUNT(*) as count FROM temporadas');
-  if (existingSeasons.count === 0) {
-    dbRun('INSERT INTO temporadas (nombre, fecha_inicio, fecha_fin, multiplicador) VALUES (?, ?, ?, ?)', ['Temporada Baja', '2026-01-15', '2026-03-31', 0.85]);
-    dbRun('INSERT INTO temporadas (nombre, fecha_inicio, fecha_fin, multiplicador) VALUES (?, ?, ?, ?)', ['Temporada Alta', '2026-06-15', '2026-08-31', 1.25]);
-    dbRun('INSERT INTO temporadas (nombre, fecha_inicio, fecha_fin, multiplicador) VALUES (?, ?, ?, ?)', ['Temporada Alta Dic', '2026-12-15', '2027-01-15', 1.50]);
-    dbRun('INSERT INTO temporadas (nombre, fecha_inicio, fecha_fin, multiplicador) VALUES (?, ?, ?, ?)', ['Fin de Semana', '2026-01-01', '2026-12-31', 1.10]);
-  }
-
-  const existingPromos = dbGet('SELECT COUNT(*) as count FROM promociones');
-  if (existingPromos.count === 0) {
-    dbRun('INSERT INTO promociones (nombre, descripcion, descuento, tipo_descuento, codigo) VALUES (?, ?, ?, ?, ?)', ['Reserva Anticipada', '15% descuento reservando 30 días antes', 15, 'porcentaje', 'ANTICIPO15']);
-    dbRun('INSERT INTO promociones (nombre, descripcion, descuento, tipo_descuento, codigo) VALUES (?, ?, ?, ?, ?)', ['Estancia Larga', '20% descuento en estancias de 7+ noches', 20, 'porcentaje', 'LARGA20']);
-    dbRun('INSERT INTO promociones (nombre, descripcion, descuento, tipo_descuento, codigo) VALUES (?, ?, ?, ?, ?)', ['Temporada Baja', '10% descuento en temporada baja', 10, 'porcentaje', 'BAJA10']);
   }
 
   saveDb();

@@ -1,8 +1,25 @@
+  </main>
+<% if (typeof user !== 'undefined' && user) { %>
+  <div class="more-sheet" id="moreSheet">
+    <div class="p-4 text-xs text-gray-500 uppercase tracking-wider mb-2">Menú rápido</div>
+    <a href="/habitaciones" class="more-nav-item"><i class="fas fa-bed"></i> Habitaciones</a>
+    <a href="/admin/facturacion" class="more-nav-item"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    <a href="/admin/tarifas" class="more-nav-item"><i class="fas fa-tags"></i> Tarifas</a>
+    <a href="/admin/temporadas" class="more-nav-item"><i class="fas fa-calendar-alt"></i> Temporadas</a>
+    <a href="/admin/promociones" class="more-nav-item"><i class="fas fa-percent"></i> Promociones</a>
+    <a href="/admin/reportes" class="more-nav-item"><i class="fas fa-chart-bar"></i> Reportes</a>
+    <a href="/perfil" class="more-nav-item"><i class="fas fa-user-shield"></i> Mi Perfil</a>
+    <hr>
+    <a href="/logout" class="btn btn-danger w-full mt-2">Cerrar Sesión</a>
+  </div>
 </div>
+<% } %>
+
 <script>
 function showToast(msg, type) {
   const el = document.createElement('div');
-  el.className = 'toast' + (type === 'error' ? ' error' : '');
+  el.className = 'toast';
+  el.classList.add(type === 'error' ? 'toast-error' : 'toast-success');
   el.textContent = msg;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
@@ -13,15 +30,22 @@ function openMoreSheet() {
   const sheet = document.getElementById('moreSheet');
   const backdrop = document.getElementById('moreBackdrop');
   if (sheet) sheet.classList.add('open');
-  if (backdrop) backdrop.classList.add('open');
+  if (backdrop) {
+    backdrop.classList.remove('hidden');
+    backdrop.classList.add('block');
+  }
 }
 
 function closeMoreSheet() {
   const sheet = document.getElementById('moreSheet');
   const backdrop = document.getElementById('moreBackdrop');
   if (sheet) sheet.classList.remove('open');
-  if (backdrop) backdrop.classList.remove('open');
+  if (backdrop) {
+    backdrop.classList.remove('block');
+    backdrop.classList.add('hidden');
+  }
 }
 </script>
+
 </body>
 </html>

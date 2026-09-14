@@ -6,8 +6,11 @@ const fs = require('fs');
 const router = express.Router();
 const { extraerDatosCedula } = require('./cedulaOCR');
 
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'public', 'uploads');
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
 const storage = multer.diskStorage({
-  destination: path.join(__dirname, '..', 'public', 'uploads'),
+  destination: UPLOADS_DIR,
   filename: (req, file, cb) => {
     cb(null, `cedula_${Date.now()}${path.extname(file.originalname)}`);
   }
@@ -25,6 +28,15 @@ router.post('/buscar-huesped', (req, res) => {
     WHERE nombre LIKE ? OR apellido LIKE ? OR numero_cedula LIKE ? LIMIT 20
   `, [query, query, query]);
   res.json(huespedes);
+});
+
+// Búsqueda exacta por cédula: usada por el check-in exprés para saber, apenas se
+// lee la cédula, si el huésped ya está registrado y así evitar volver a digitarlo.
+router.get('/huesped-por-cedula/:cedula', (req, res) => {
+  const cedula = (req.params.cedula || '').replace(/\D/g, '');
+  if (!cedula) return res.json({ existe: false });
+  const huesped = dbGet('SELECT * FROM huespedes WHERE numero_cedula = ?', [cedula]);
+  res.json({ existe: !!huesped, huesped: huesped || null });
 });
 
 router.get('/habitaciones-disponibles', (req, res) => {

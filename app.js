@@ -4,11 +4,13 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const hotel = require('./config/hotel');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirname, 'public', 'uploads')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -16,12 +18,14 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'hotel-admin-secret-key-2026',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000 }
+  cookie: { maxAge: 8 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' }
 }));
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.path = req.path;
+  res.locals.csrfToken = req.session ? req.session.id : null;
+  res.locals.hotel = hotel;
   next();
 });
 
@@ -40,9 +44,11 @@ async function startServer() {
   const reservationRoutes = require('./routes/reservations');
   const adminRoutes = require('./routes/admin');
   const apiRoutes = require('./routes/api');
+  const checkinRoutes = require('./routes/checkin');
 
   app.use('/', authRoutes);
   app.use('/api', apiRoutes);
+  app.use('/checkin', requireAuth, checkinRoutes);
   app.use('/huespedes', requireAuth, guestRoutes);
   app.use('/habitaciones', requireAuth, roomRoutes);
   app.use('/reservas', requireAuth, reservationRoutes);
@@ -84,6 +90,19 @@ async function startServer() {
       WHERE r.fecha_salida = ? AND r.estado = 'checkin'
     `, [hoy]);
 
+    const ocupacionPorTipo = dbAll(`
+      SELECT ha.tipo, COUNT(*) as total,
+        SUM(CASE WHEN ha.estado = 'ocupado' THEN 1 ELSE 0 END) as ocupadas,
+        SUM(CASE WHEN ha.estado = 'reservada' THEN 1 ELSE 0 END) as reservadas
+      FROM habitaciones ha GROUP BY ha.tipo
+    `);
+
+    const ingresosMensuales = dbAll(`
+      SELECT strftime('%Y-%m', fecha_emision) as mes, SUM(total) as total
+      FROM facturas WHERE estado = 'pagada'
+      GROUP BY mes ORDER BY mes ASC LIMIT 12
+    `);
+
     res.render('dashboard', {
       totalHuespedes: totalHuespedes.count,
       totalReservas: totalReservas.count,
@@ -91,7 +110,9 @@ async function startServer() {
       ingresosMes: ingresosMes.total || 0,
       reservasActivas,
       checkinsHoy,
-      checkoutsHoy
+      checkoutsHoy,
+      ocupacionPorTipo,
+      ingresosMensuales
     });
   });
 

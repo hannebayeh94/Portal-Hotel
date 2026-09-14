@@ -1,0 +1,521 @@
+<%- include('../partials/header') %>
+<%
+const _hoy = new Date();
+const _manana = new Date(_hoy.getTime() + 24*60*60*1000);
+const hoy = _hoy.toISOString().split('T')[0];
+const manana = _manana.toISOString().split('T')[0];
+%>
+
+<style>
+  /* Estilos propios del check-in exprés: todo más grande y con más aire, pensado
+     para una persona que toca en una tablet y no quiere leer letra pequeña. */
+  .cx-wrap { max-width: 820px; margin: 0 auto; }
+  .cx-steps { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .cx-steps .s { flex: 1; text-align: center; padding: 0.6rem 0.4rem; border-radius: var(--radius-md); background: var(--surface-2); color: var(--text-faint); font-weight: 700; font-size: 0.9rem; border: 1px solid var(--border); }
+  .cx-steps .s .n { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--border); color: var(--text-muted); margin-right: 0.4rem; font-size: 0.85rem; }
+  .cx-steps .s.active { background: var(--primary-soft); color: var(--primary-strong); border-color: var(--primary); }
+  .cx-steps .s.active .n { background: var(--primary); color: #fff; }
+  .cx-steps .s.done { color: var(--success); }
+  .cx-steps .s.done .n { background: var(--success); color: #fff; }
+
+  .cx-paso { display: none; animation: fadeIn 0.25s ease; }
+  .cx-paso.active { display: block; }
+
+  .cx-btn-xl { padding: 1rem 1.6rem; font-size: 1.15rem; min-height: 58px; border-radius: var(--radius-md); }
+  .cx-btn-block { width: 100%; justify-content: center; }
+
+  .cx-drop { border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); text-align: center; padding: 1.5rem; }
+  .cx-nombre-grande { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--text); line-height: 1.1; }
+  .cx-cedula-grande { font-size: 1.4rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; margin-top: 0.3rem; }
+  .cx-check-big { color: var(--success); font-size: 2.5rem; }
+
+  .cx-hab { cursor: pointer; padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius-md); background: var(--surface); transition: all 0.15s ease; }
+  .cx-hab:hover { border-color: var(--border-strong); }
+  .cx-hab.sel { border-color: var(--primary); background: var(--primary-soft); }
+  .cx-hab .num { font-size: 1.3rem; font-weight: 700; }
+
+  .cx-stepper { display: inline-flex; align-items: center; gap: 0.75rem; }
+  .cx-stepper button { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border-strong); background: var(--surface); font-size: 1.3rem; font-weight: 700; cursor: pointer; color: var(--text); line-height: 1; }
+  .cx-stepper button:hover { background: var(--surface-2); }
+  .cx-stepper .val { font-size: 1.4rem; font-weight: 700; min-width: 2.5rem; text-align: center; }
+
+  .cx-resumen { display: grid; gap: 0.85rem; }
+  .cx-resumen .fila { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: var(--surface-2); border-radius: var(--radius-md); }
+  .cx-resumen .fila .k { color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+  .cx-resumen .fila .v { font-weight: 700; font-size: 1.05rem; text-align: right; }
+  .cx-total { background: var(--primary-soft) !important; }
+  .cx-total .v { color: var(--primary-strong); font-size: 1.35rem; }
+</style>
+
+<div class="cx-wrap">
+  <div class="topbar">
+    <h1><i class="fas fa-bolt"></i> Check-in Exprés</h1>
+    <a href="/" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Salir</a>
+  </div>
+
+  <div class="cx-steps">
+    <div class="s active" id="tab1"><span class="n">1</span> Escanear</div>
+    <div class="s" id="tab2"><span class="n">2</span> Habitación</div>
+    <div class="s" id="tab3"><span class="n">3</span> Registrar</div>
+  </div>
+
+  <form id="formCheckin">
+    <input type="hidden" name="huesped_id" id="huespedId">
+    <input type="hidden" name="foto_cedula" id="fotoCedula">
+    <input type="hidden" name="fecha_nacimiento" id="hFechaNac">
+    <input type="hidden" name="lugar_nacimiento" id="hLugarNac">
+    <input type="hidden" name="sexo" id="hSexo">
+    <input type="hidden" name="grupo_sanguineo" id="hRH">
+    <input type="hidden" name="estatura" id="hEstatura">
+    <input type="hidden" name="fecha_expedicion" id="hFechaExp">
+    <input type="hidden" name="lugar_expedicion" id="hLugarExp">
+
+    <!-- ══════════ PASO 1: Escanear la cédula ══════════ -->
+    <div class="cx-paso active" id="paso1">
+      <div class="card">
+        <h3 style="margin-bottom:0.4rem;"><i class="fas fa-camera" style="color:var(--primary)"></i> Escanee el frente de la cédula</h3>
+        <p class="text-muted" style="margin-bottom:1rem;">Tome la foto con buena luz y sin reflejos. Con el frente basta; el reverso es opcional.</p>
+
+        <div class="cx-drop" id="dropFrente">
+          <div class="camera-container" id="cam_frente" style="display:none;">
+            <video id="video_frente" autoplay playsinline></video>
+            <div class="ocr-overlay"></div>
+          </div>
+          <canvas id="canvas_frente" style="display:none;"></canvas>
+          <div id="preview_frente" style="display:none; margin-bottom:1rem;">
+            <img id="img_frente" style="max-width:100%; max-height:260px; border-radius:var(--radius-md); border:2px solid var(--border);">
+          </div>
+
+          <div id="acciones_frente" style="display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary cx-btn-xl" onclick="abrirCamara('frente')"><i class="fas fa-camera"></i> Tomar Foto</button>
+            <button type="button" class="btn btn-outline cx-btn-xl" onclick="document.getElementById('file_frente').click()"><i class="fas fa-upload"></i> Subir Imagen</button>
+            <input type="file" id="file_frente" accept="image/*" style="display:none" onchange="procesarArchivo(event,'frente')">
+          </div>
+          <button type="button" id="btnCapturar_frente" class="btn btn-success cx-btn-xl" style="display:none" onclick="capturarFoto('frente')"><i class="fas fa-camera"></i> Capturar</button>
+
+          <div id="status_frente" style="margin-top:0.9rem; font-size:0.95rem; color:var(--text-muted);"></div>
+        </div>
+
+        <!-- Datos leídos (nombre + cédula en grande) -->
+        <div id="datosLeidos" style="display:none; margin-top:1.25rem; text-align:center;">
+          <div class="cx-check-big"><i class="fas fa-check-circle"></i></div>
+          <div id="badgeExistente" style="display:none; margin:0.5rem 0;">
+            <span class="badge badge-success"><i class="fas fa-user-check"></i> Huésped ya registrado</span>
+          </div>
+          <div class="cx-nombre-grande" id="verNombre">—</div>
+          <div class="cx-cedula-grande"><i class="fas fa-id-card"></i> <span id="verCedula">—</span></div>
+
+          <div style="margin-top:1rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleCorregir()"><i class="fas fa-pen"></i> Corregir datos</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="reintentar()"><i class="fas fa-redo"></i> Escanear otra vez</button>
+          </div>
+
+          <!-- Campos editables (ocultos hasta que se pulse "Corregir") -->
+          <div id="camposEditables" style="display:none; margin-top:1rem; text-align:left;">
+            <div class="grid-2">
+              <div class="form-group"><label>Nombre *</label><input type="text" name="nombre" id="campoNombre" class="form-control" oninput="sincronizarVista()"></div>
+              <div class="form-group"><label>Apellido *</label><input type="text" name="apellido" id="campoApellido" class="form-control" oninput="sincronizarVista()"></div>
+            </div>
+            <div class="form-group"><label>Número de Cédula *</label><input type="text" name="numero_cedula" id="campoCedula" class="form-control" oninput="cedulaEditada()"></div>
+          </div>
+        </div>
+
+        <!-- Reverso opcional -->
+        <details id="detalleReverso" style="margin-top:1.25rem;">
+          <summary style="cursor:pointer; font-weight:600; color:var(--text-muted);"><i class="fas fa-image"></i> Escanear reverso (opcional — guarda nacimiento, RH, expedición)</summary>
+          <div class="cx-drop" style="margin-top:0.75rem;">
+            <div class="camera-container" id="cam_reverso" style="display:none;">
+              <video id="video_reverso" autoplay playsinline></video>
+              <div class="ocr-overlay"></div>
+            </div>
+            <canvas id="canvas_reverso" style="display:none;"></canvas>
+            <div id="preview_reverso" style="display:none; margin-bottom:1rem;">
+              <img id="img_reverso" style="max-width:100%; max-height:220px; border-radius:var(--radius-md); border:2px solid var(--border);">
+            </div>
+            <div id="acciones_reverso" style="display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary" onclick="abrirCamara('reverso')"><i class="fas fa-camera"></i> Tomar Foto</button>
+              <button type="button" class="btn btn-outline" onclick="document.getElementById('file_reverso').click()"><i class="fas fa-upload"></i> Subir Imagen</button>
+              <input type="file" id="file_reverso" accept="image/*" style="display:none" onchange="procesarArchivo(event,'reverso')">
+            </div>
+            <button type="button" id="btnCapturar_reverso" class="btn btn-success" style="display:none" onclick="capturarFoto('reverso')"><i class="fas fa-camera"></i> Capturar</button>
+            <div id="status_reverso" style="margin-top:0.75rem; font-size:0.9rem; color:var(--text-muted);"></div>
+          </div>
+        </details>
+      </div>
+
+      <div style="display:flex; gap:0.6rem;">
+        <button type="button" class="btn btn-outline cx-btn-xl" onclick="ingresarManual()"><i class="fas fa-keyboard"></i> Ingresar a mano</button>
+        <button type="button" id="btnAPaso2" class="btn btn-success cx-btn-xl cx-btn-block" onclick="irPaso(2)" disabled><i class="fas fa-arrow-right"></i> Continuar</button>
+      </div>
+    </div>
+
+    <!-- ══════════ PASO 2: Fechas y habitación ══════════ -->
+    <div class="cx-paso" id="paso2">
+      <div class="card">
+        <h3 style="margin-bottom:1rem;"><i class="fas fa-calendar" style="color:var(--primary)"></i> Fechas de la estadía</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Entrada</label>
+            <input type="date" name="fecha_entrada" id="fechaEntrada" class="form-control" value="<%= hoy %>" onchange="alCambiarFechas()">
+          </div>
+          <div class="form-group">
+            <label>Salida</label>
+            <input type="date" name="fecha_salida" id="fechaSalida" class="form-control" value="<%= manana %>" onchange="alCambiarFechas()">
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <span class="text-muted">Noches:</span>
+          <div class="cx-stepper">
+            <button type="button" onclick="ajustarNoches(-1)">−</button>
+            <span class="val" id="valNoches">1</span>
+            <button type="button" onclick="ajustarNoches(1)">+</button>
+          </div>
+          <span class="text-muted" style="margin-left:1rem;">Adultos:</span>
+          <div class="cx-stepper">
+            <button type="button" onclick="ajustarAdultos(-1)">−</button>
+            <span class="val" id="valAdultos">1</span>
+            <button type="button" onclick="ajustarAdultos(1)">+</button>
+          </div>
+          <input type="hidden" name="adultos" id="adultos" value="1">
+          <input type="hidden" name="ninos" id="ninos" value="0">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-bed" style="color:var(--primary)"></i> Elija una habitación disponible</h3></div>
+        <div class="form-group" style="max-width:280px;">
+          <label>Tipo (opcional)</label>
+          <select class="form-control" id="filtroTipo" onchange="buscarDisponibles()">
+            <option value="">Todos los tipos</option>
+            <option value="individual">Individual</option>
+            <option value="doble">Doble</option>
+            <option value="suite">Suite</option>
+            <option value="familiar">Familiar</option>
+            <option value="presidencial">Presidencial</option>
+          </select>
+        </div>
+        <div id="listaHabitaciones" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:0.75rem; margin-top:0.5rem;"></div>
+        <input type="hidden" name="habitacion_id" id="habitacionSel">
+      </div>
+
+      <details style="margin-bottom:1.4rem;">
+        <summary style="cursor:pointer; font-weight:600; color:var(--text-muted);"><i class="fas fa-percent"></i> Aplicar promoción (opcional)</summary>
+        <div class="form-group" style="margin-top:0.75rem; max-width:360px;">
+          <select name="promocion_id" id="promocionId" class="form-control" onchange="recalcularEstimado()">
+            <option value="">Sin promoción</option>
+            <% promociones.forEach(function(p) { %>
+              <option value="<%= p.id %>" data-tipo="<%= p.tipo_descuento %>" data-desc="<%= p.descuento %>"><%= p.nombre %> (<%= p.tipo_descuento === 'porcentaje' ? p.descuento + '%' : '$' + Number(p.descuento).toLocaleString('es-CO') %> desc)</option>
+            <% }) %>
+          </select>
+        </div>
+      </details>
+
+      <div style="display:flex; gap:0.6rem;">
+        <button type="button" class="btn btn-outline cx-btn-xl" onclick="irPaso(1)"><i class="fas fa-arrow-left"></i> Atrás</button>
+        <button type="button" id="btnAPaso3" class="btn btn-success cx-btn-xl cx-btn-block" onclick="irPaso(3)" disabled><i class="fas fa-arrow-right"></i> Continuar</button>
+      </div>
+    </div>
+
+    <!-- ══════════ PASO 3: Confirmar y registrar ══════════ -->
+    <div class="cx-paso" id="paso3">
+      <div class="card">
+        <h3 style="margin-bottom:1rem;"><i class="fas fa-clipboard-check" style="color:var(--primary)"></i> Revise y registre la entrada</h3>
+        <div class="cx-resumen">
+          <div class="fila"><span class="k"><i class="fas fa-user"></i> Huésped</span><span class="v" id="rHuesped">—</span></div>
+          <div class="fila"><span class="k"><i class="fas fa-id-card"></i> Cédula</span><span class="v" id="rCedula">—</span></div>
+          <div class="fila"><span class="k"><i class="fas fa-bed"></i> Habitación</span><span class="v" id="rHab">—</span></div>
+          <div class="fila"><span class="k"><i class="fas fa-calendar"></i> Fechas</span><span class="v" id="rFechas">—</span></div>
+          <div class="fila cx-total"><span class="k"><i class="fas fa-dollar-sign"></i> Total estimado</span><span class="v" id="rTotal">—</span></div>
+        </div>
+        <p class="text-muted text-sm" style="margin-top:0.75rem;">El total final se calcula al registrar (incluye temporada, promoción e impuestos al facturar).</p>
+        <div id="errorRegistro" class="alert alert-error" style="display:none; margin-top:1rem;"></div>
+      </div>
+
+      <div style="display:flex; gap:0.6rem;">
+        <button type="button" class="btn btn-outline cx-btn-xl" onclick="irPaso(2)"><i class="fas fa-arrow-left"></i> Atrás</button>
+        <button type="button" id="btnRegistrar" class="btn btn-success cx-btn-xl cx-btn-block" onclick="registrar()"><i class="fas fa-key"></i> Registrar Entrada</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+const streams = {};
+const imgs = { frente: null, reverso: null };
+let habitacionElegida = null; // {numero, tipo, precio_base}
+
+// ---------- Navegación entre pasos ----------
+function irPaso(n) {
+  document.querySelectorAll('.cx-paso').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('paso' + n).classList.add('active');
+  for (let i = 1; i <= 3; i++) {
+    const tab = document.getElementById('tab' + i);
+    tab.classList.toggle('active', i === n);
+    tab.classList.toggle('done', i < n);
+  }
+  if (n === 2) buscarDisponibles();
+  if (n === 3) armarResumen();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---------- Cámara / captura (reutiliza el patrón del alta de huésped) ----------
+async function abrirCamara(lado) {
+  try {
+    streams[lado] = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
+    document.getElementById('video_' + lado).srcObject = streams[lado];
+    document.getElementById('cam_' + lado).style.display = 'block';
+    document.getElementById('acciones_' + lado).style.display = 'none';
+    document.getElementById('btnCapturar_' + lado).style.display = 'inline-flex';
+  } catch (err) {
+    document.getElementById('status_' + lado).textContent = 'No se pudo abrir la cámara. Use "Subir Imagen".';
+  }
+}
+function pararCamara(lado) {
+  if (streams[lado]) { streams[lado].getTracks().forEach(function(t) { t.stop(); }); streams[lado] = null; }
+  document.getElementById('cam_' + lado).style.display = 'none';
+  document.getElementById('btnCapturar_' + lado).style.display = 'none';
+  document.getElementById('acciones_' + lado).style.display = 'flex';
+}
+function capturarFoto(lado) {
+  const video = document.getElementById('video_' + lado);
+  const canvas = document.getElementById('canvas_' + lado);
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  mostrarPreview(lado, canvas.toDataURL('image/jpeg', 0.95));
+  pararCamara(lado);
+  procesarOCR(lado, imgs[lado]);
+}
+function procesarArchivo(e, lado) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) { mostrarPreview(lado, ev.target.result); procesarOCR(lado, imgs[lado]); };
+  reader.readAsDataURL(file);
+}
+function mostrarPreview(lado, dataUrl) {
+  imgs[lado] = dataUrl;
+  document.getElementById('preview_' + lado).style.display = 'block';
+  document.getElementById('img_' + lado).src = dataUrl;
+}
+
+// ---------- OCR ----------
+async function procesarOCR(lado, imageData) {
+  const status = document.getElementById('status_' + lado);
+  status.innerHTML = '<span class="spinner"></span> Leyendo la cédula...';
+  try {
+    const blob = await (await fetch(imageData)).blob();
+    const fd = new FormData();
+    fd.append('imagen', blob, 'cedula_' + lado + '.jpg');
+    const up = await (await fetch('/api/ocr/upload', { method: 'POST', body: fd })).json();
+    if (!up.file) throw new Error('subida');
+    if (lado === 'frente') document.getElementById('fotoCedula').value = up.file;
+
+    const ocr = await (await fetch('/api/extraer-datos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imagePath: up.file, lado: lado })
+    })).json();
+
+    if (ocr.success && ocr.datos) {
+      llenarDatos(ocr.datos);
+      status.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Cédula leída correctamente.';
+      if (lado === 'frente') revelarDatos();
+    } else {
+      status.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:var(--warning)"></i> No se leyó bien. Intente con más luz, o toque "Ingresar a mano".';
+    }
+  } catch (err) {
+    status.innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i> Error al leer. Intente de nuevo o ingrese a mano.';
+  }
+}
+
+function capitalizar(s) { return (s || '').toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); }); }
+
+function llenarDatos(d) {
+  if (d.nombre) document.getElementById('campoNombre').value = capitalizar(d.nombre);
+  if (d.apellido) document.getElementById('campoApellido').value = capitalizar(d.apellido);
+  if (d.numero_cedula) document.getElementById('campoCedula').value = d.numero_cedula.replace(/\D/g, '');
+  if (d.fecha_nacimiento) document.getElementById('hFechaNac').value = d.fecha_nacimiento;
+  if (d.lugar_nacimiento) document.getElementById('hLugarNac').value = capitalizar(d.lugar_nacimiento);
+  if (d.sexo) document.getElementById('hSexo').value = d.sexo;
+  if (d.grupo_sanguineo) document.getElementById('hRH').value = d.grupo_sanguineo;
+  if (d.estatura) document.getElementById('hEstatura').value = d.estatura;
+  if (d.fecha_expedicion) document.getElementById('hFechaExp').value = d.fecha_expedicion;
+  if (d.lugar_expedicion) document.getElementById('hLugarExp').value = capitalizar(d.lugar_expedicion);
+  sincronizarVista();
+  if (document.getElementById('campoCedula').value) buscarHuespedExistente();
+}
+
+// Muestra el bloque de nombre+cédula en grande y habilita continuar.
+function revelarDatos() {
+  document.getElementById('datosLeidos').style.display = 'block';
+  sincronizarVista();
+}
+function sincronizarVista() {
+  const nom = document.getElementById('campoNombre').value.trim();
+  const ape = document.getElementById('campoApellido').value.trim();
+  const ced = document.getElementById('campoCedula').value.trim();
+  document.getElementById('verNombre').textContent = (nom || ape) ? (nom + ' ' + ape).trim() : '—';
+  document.getElementById('verCedula').textContent = ced || '—';
+  document.getElementById('btnAPaso2').disabled = !(nom && ape && ced);
+}
+function cedulaEditada() {
+  document.getElementById('huespedId').value = '';
+  document.getElementById('badgeExistente').style.display = 'none';
+  sincronizarVista();
+  clearTimeout(window._cedTimer);
+  window._cedTimer = setTimeout(buscarHuespedExistente, 500);
+}
+function toggleCorregir() {
+  const c = document.getElementById('camposEditables');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+}
+function ingresarManual() {
+  document.getElementById('datosLeidos').style.display = 'block';
+  document.getElementById('camposEditables').style.display = 'block';
+  document.querySelector('#datosLeidos .cx-check-big').style.display = 'none';
+  document.getElementById('campoNombre').focus();
+}
+function reintentar() {
+  ['frente'].forEach(function(lado) {
+    imgs[lado] = null;
+    document.getElementById('preview_' + lado).style.display = 'none';
+    document.getElementById('status_' + lado).textContent = '';
+  });
+  document.getElementById('datosLeidos').style.display = 'none';
+}
+
+// Detección de duplicados: si la cédula ya existe, tomamos el registro de la BD.
+async function buscarHuespedExistente() {
+  const ced = document.getElementById('campoCedula').value.replace(/\D/g, '');
+  if (ced.length < 5) return;
+  try {
+    const r = await (await fetch('/api/huesped-por-cedula/' + ced)).json();
+    if (r.existe && r.huesped) {
+      document.getElementById('huespedId').value = r.huesped.id;
+      document.getElementById('campoNombre').value = r.huesped.nombre;
+      document.getElementById('campoApellido').value = r.huesped.apellido;
+      document.getElementById('badgeExistente').style.display = 'block';
+      sincronizarVista();
+    } else {
+      document.getElementById('huespedId').value = '';
+      document.getElementById('badgeExistente').style.display = 'none';
+    }
+  } catch (e) { /* silencioso: si falla, se creará como nuevo al registrar */ }
+}
+
+// ---------- Fechas / noches ----------
+function diffNoches() {
+  const e = new Date(document.getElementById('fechaEntrada').value);
+  const s = new Date(document.getElementById('fechaSalida').value);
+  return Math.max(1, Math.round((s - e) / 86400000));
+}
+function alCambiarFechas() {
+  document.getElementById('valNoches').textContent = diffNoches();
+  buscarDisponibles();
+}
+function ajustarNoches(delta) {
+  const nuevas = Math.max(1, diffNoches() + delta);
+  const e = new Date(document.getElementById('fechaEntrada').value);
+  const s = new Date(e.getTime() + nuevas * 86400000);
+  document.getElementById('fechaSalida').value = s.toISOString().split('T')[0];
+  document.getElementById('valNoches').textContent = nuevas;
+  buscarDisponibles();
+}
+function ajustarAdultos(delta) {
+  const v = Math.max(1, (parseInt(document.getElementById('adultos').value) || 1) + delta);
+  document.getElementById('adultos').value = v;
+  document.getElementById('valAdultos').textContent = v;
+}
+
+// ---------- Disponibilidad ----------
+function buscarDisponibles() {
+  const entrada = document.getElementById('fechaEntrada').value;
+  const salida = document.getElementById('fechaSalida').value;
+  const tipo = document.getElementById('filtroTipo').value;
+  const cont = document.getElementById('listaHabitaciones');
+  if (!entrada || !salida) return;
+
+  let url = '/api/habitaciones-disponibles?fecha_entrada=' + entrada + '&fecha_salida=' + salida;
+  if (tipo) url += '&tipo=' + tipo;
+  cont.innerHTML = '<div class="text-center" style="grid-column:1/-1;"><span class="spinner"></span> <span class="text-muted">Buscando...</span></div>';
+
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.length) { cont.innerHTML = '<div class="text-muted" style="grid-column:1/-1;">No hay habitaciones disponibles para esas fechas.</div>'; return; }
+    cont.innerHTML = '';
+    data.forEach(function(h) {
+      const div = document.createElement('div');
+      div.className = 'cx-hab';
+      div.onclick = function() { elegirHabitacion(h, div); };
+      div.innerHTML = '<div class="num">Hab ' + h.numero + ' <span class="badge badge-info">' + (h.tipo.charAt(0).toUpperCase() + h.tipo.slice(1)) + '</span></div>' +
+        '<div style="color:var(--primary); font-weight:700; font-size:1.05rem; margin-top:0.35rem;">$' + Number(h.precio_base).toLocaleString('es-CO') + ' <span class="text-muted text-sm" style="font-weight:500;">/ noche</span></div>' +
+        '<div class="text-muted text-sm" style="margin-top:0.25rem;"><i class="fas fa-user-group"></i> ' + h.capacidad + ' personas</div>';
+      cont.appendChild(div);
+    });
+    // Si había una habitación elegida y sigue disponible, re-marcarla.
+    if (habitacionElegida) {
+      const sigue = data.find(function(h) { return h.id == habitacionElegida.id; });
+      if (!sigue) { habitacionElegida = null; document.getElementById('habitacionSel').value = ''; document.getElementById('btnAPaso3').disabled = true; }
+    }
+  }).catch(function() { cont.innerHTML = '<div class="text-danger" style="grid-column:1/-1;">Error al buscar disponibilidad.</div>'; });
+}
+function elegirHabitacion(h, el) {
+  document.querySelectorAll('#listaHabitaciones .cx-hab').forEach(function(c) { c.classList.remove('sel'); });
+  el.classList.add('sel');
+  habitacionElegida = h;
+  document.getElementById('habitacionSel').value = h.id;
+  document.getElementById('btnAPaso3').disabled = false;
+  recalcularEstimado();
+}
+
+// ---------- Estimado / resumen ----------
+function calcularEstimado() {
+  if (!habitacionElegida) return 0;
+  let noche = Number(habitacionElegida.precio_base);
+  const sel = document.getElementById('promocionId').selectedOptions[0];
+  if (sel && sel.value) {
+    const tipo = sel.dataset.tipo, desc = Number(sel.dataset.desc);
+    const pct = tipo === 'porcentaje' ? desc : (desc / noche) * 100;
+    noche = Math.round(noche * (1 - pct / 100));
+  }
+  return noche * diffNoches();
+}
+function recalcularEstimado() {
+  if (document.getElementById('paso3').classList.contains('active')) armarResumen();
+}
+function armarResumen() {
+  const nom = (document.getElementById('campoNombre').value + ' ' + document.getElementById('campoApellido').value).trim();
+  document.getElementById('rHuesped').textContent = nom || '—';
+  document.getElementById('rCedula').textContent = document.getElementById('campoCedula').value || '—';
+  document.getElementById('rHab').textContent = habitacionElegida ? ('Hab ' + habitacionElegida.numero + ' · ' + capitalizar(habitacionElegida.tipo)) : '—';
+  const e = new Date(document.getElementById('fechaEntrada').value).toLocaleDateString('es-CO');
+  const s = new Date(document.getElementById('fechaSalida').value).toLocaleDateString('es-CO');
+  document.getElementById('rFechas').textContent = e + ' → ' + s + '  (' + diffNoches() + ' noche' + (diffNoches() > 1 ? 's' : '') + ')';
+  document.getElementById('rTotal').textContent = '$' + Number(calcularEstimado()).toLocaleString('es-CO');
+}
+
+// ---------- Registro final ----------
+async function registrar() {
+  const btn = document.getElementById('btnRegistrar');
+  const err = document.getElementById('errorRegistro');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Registrando...';
+  try {
+    const data = Object.fromEntries(new FormData(document.getElementById('formCheckin')).entries());
+    const res = await fetch('/checkin/registrar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (json.ok) { window.location = '/reservas/' + json.reservaId; return; }
+    err.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (json.error || 'No se pudo registrar.');
+    err.style.display = 'flex';
+  } catch (e) {
+    err.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error de conexión. Intente de nuevo.';
+    err.style.display = 'flex';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-key"></i> Registrar Entrada';
+}
+
+document.getElementById('valNoches').textContent = diffNoches();
+</script>
+<%- include('../partials/footer') %>

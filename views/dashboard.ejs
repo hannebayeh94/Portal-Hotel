@@ -1,134 +1,290 @@
 <%- include('partials/header') %>
-<div class="topbar">
-  <h1><i class="fas fa-chart-pie" style="color:#1f4d3a"></i> Dashboard</h1>
-  <div class="user-info">
-    <i class="fas fa-user-circle"></i> <span><%= user.nombre %></span>
-    <span style="color:#ccc">|</span>
-    <span><%= new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></span>
-  </div>
-</div>
-
-<div class="grid-4">
-  <div class="stat-card">
-    <div class="icon" style="color:#1f4d3a"><i class="fas fa-users"></i></div>
-    <div class="number"><%= totalHuespedes %></div>
-    <div class="label">Huéspedes Registrados</div>
-  </div>
-  <div class="stat-card">
-    <div class="icon" style="color:#059669"><i class="fas fa-calendar-check"></i></div>
-    <div class="number"><%= totalReservas %></div>
-    <div class="label">Reservas Totales</div>
-  </div>
-  <div class="stat-card">
-    <div class="icon" style="color:#d97706"><i class="fas fa-percentage"></i></div>
-    <div class="number"><%= ocupacion %>%</div>
-    <div class="label">Ocupación Actual</div>
-  </div>
-  <div class="stat-card">
-    <div class="icon" style="color:#059669"><i class="fas fa-dollar-sign"></i></div>
-    <div class="number">$<%= Number(ingresosMes).toLocaleString('es-CO') %></div>
-    <div class="label">Ingresos del Mes</div>
-  </div>
-</div>
-
-<% if (checkinsHoy && checkinsHoy.length > 0) { %>
-<div class="card" style="border-left: 4px solid #1f4d3a;">
-  <div class="card-header"><h3><i class="fas fa-sign-in-alt" style="color:#1f4d3a"></i> Check-ins de Hoy</h3></div>
-  <% checkinsHoy.forEach(function(r) { %>
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f0f0f0">
-      <div><strong><%= r.nombre %> <%= r.apellido %></strong> - Hab <%= r.hab_numero %></div>
-      <a href="/reservas/<%= r.id %>" class="btn btn-primary btn-sm"><i class="fas fa-arrow-right"></i> Ver</a>
-    </div>
-  <% }) %>
-</div>
-<% } %>
-
-<% if (checkoutsHoy && checkoutsHoy.length > 0) { %>
-<div class="card" style="border-left: 4px solid #d97706;">
-  <div class="card-header"><h3><i class="fas fa-sign-out-alt" style="color:#d97706"></i> Check-outs de Hoy</h3></div>
-  <% checkoutsHoy.forEach(function(r) { %>
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f0f0f0">
-      <div><strong><%= r.nombre %> <%= r.apellido %></strong> - Hab <%= r.hab_numero %></div>
-      <a href="/reservas/<%= r.id %>" class="btn btn-warning btn-sm"><i class="fas fa-arrow-right"></i> Checkout</a>
-    </div>
-  <% }) %>
-</div>
-<% } %>
-
-<div class="card">
-  <div class="card-header">
-    <h3><i class="fas fa-bed" style="color:#1f4d3a"></i> Reservas Activas</h3>
-  </div>
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Huésped</th>
-          <th>Cédula</th>
-          <th>Habitación</th>
-          <th>Tipo</th>
-          <th>Entrada</th>
-          <th>Salida</th>
-          <th>Estado</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if (reservasActivas && reservasActivas.length > 0) { %>
-          <% reservasActivas.forEach(function(r) { %>
-          <tr>
-            <td><strong><%= r.nombre %> <%= r.apellido %></strong></td>
-            <td><%= r.numero_cedula %></td>
-            <td><%= r.hab_numero %></td>
-            <td><span class="badge badge-info"><%= r.hab_tipo %></span></td>
-            <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
-            <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
-            <td>
-              <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
-              <% if (r.estado === 'checkin') { %><span class="badge badge-success">Check-in</span><% } %>
-            </td>
-            <td><a href="/reservas/<%= r.id %>" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a></td>
-          </tr>
-          <% }) %>
-        <% } else { %>
-          <tr><td colspan="8" class="text-center text-muted">No hay reservas activas</td></tr>
-        <% } %>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<div class="grid-2">
-  <div class="card">
-    <div class="card-header"><h3><i class="fas fa-chart-line" style="color:#059669"></i> Acceso Rápido</h3></div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-      <a href="/huespedes/nuevo" class="btn btn-primary"><i class="fas fa-user-plus"></i> Nuevo Huésped</a>
-      <a href="/reservas/nueva" class="btn btn-success"><i class="fas fa-key"></i> Check-in Rápido</a>
-      <a href="/habitaciones/nueva" class="btn btn-warning"><i class="fas fa-plus-square"></i> Nueva Habitación</a>
-      <a href="/admin/reportes" class="btn btn-outline"><i class="fas fa-chart-bar"></i> Reportes</a>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header"><h3><i class="fas fa-info-circle" style="color:#1f4d3a"></i> Resumen del Día</h3></div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; text-align:center;">
+<div class="py-6">
+  <div class="max-w-7xl mx-auto space-y-6">
+    
+    <!-- Encabezado de Bienvenida y Accesos Rápidos -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
       <div>
-        <div style="font-size:1.5rem; font-weight:700; color:#1f4d3a"><%= checkinsHoy ? checkinsHoy.length : 0 %></div>
-        <div class="text-muted text-sm">Check-ins Hoy</div>
+        <h1 class="font-display text-2xl text-gray-900 font-bold">Panel Principal</h1>
+        <p class="text-sm text-gray-500">Resumen operativo y métricas en tiempo real</p>
       </div>
-      <div>
-        <div style="font-size:1.5rem; font-weight:700; color:#d97706"><%= checkoutsHoy ? checkoutsHoy.length : 0 %></div>
-        <div class="text-muted text-sm">Check-outs Hoy</div>
-      </div>
-      <div>
-        <div style="font-size:1.5rem; font-weight:700; color:#059669"><%= reservasActivas ? reservasActivas.length : 0 %></div>
-        <div class="text-muted text-sm">Reservas Activas</div>
-      </div>
-      <div>
-        <div style="font-size:1.5rem; font-weight:700; color:#9333ea"><%= totalHuespedes %></div>
-        <div class="text-muted text-sm">Total Huéspedes</div>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <a href="/checkin" class="btn btn-primary"><i class="fas fa-bolt mr-1.5 text-amber-300"></i> Check-in Exprés</a>
+        <a href="/reservas/nueva" class="btn btn-success"><i class="fas fa-calendar-plus mr-1.5"></i> Nueva Reserva</a>
+        <a href="/huespedes/nuevo" class="btn btn-outline"><i class="fas fa-user-plus mr-1.5 text-primary-600"></i> Registrar Huésped</a>
+        <a href="/habitaciones" class="btn btn-outline"><i class="fas fa-bed mr-1.5 text-blue-600"></i> Habitaciones</a>
       </div>
     </div>
+
+    <!-- Tarjetas KPI Principales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Huéspedes Registrados</span>
+          <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i class="fas fa-users"></i>
+          </div>
+        </div>
+        <div class="stat-number text-emerald-700"><%= totalHuespedes %></div>
+        <div class="text-xs text-gray-400">Total en directorio</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Reservas Totales</span>
+          <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+        </div>
+        <div class="stat-number text-blue-700"><%= totalReservas %></div>
+        <div class="text-xs text-gray-400">Reservas no canceladas</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ocupación Actual</span>
+          <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <i class="fas fa-percentage"></i>
+          </div>
+        </div>
+        <div class="stat-number text-amber-600"><%= ocupacion %>%</div>
+        <div class="text-xs text-gray-400">Porcentaje de habitaciones</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ingresos del Mes</span>
+          <div class="w-9 h-9 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+        </div>
+        <div class="stat-number text-primary-800">$<%= Number(ingresosMes).toLocaleString('es-CO') %></div>
+        <div class="text-xs text-gray-400">Facturación pagada</div>
+      </div>
+    </div>
+
+    <!-- Gráficos Interactivos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="font-display font-medium text-gray-800"><i class="fas fa-chart-line text-primary-600 mr-2"></i> Tendencia de Ingresos</h3>
+          <span class="text-xs text-gray-400">Últimos meses</span>
+        </div>
+        <div style="height:260px;">
+          <canvas id="dashIngresos"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="font-display font-medium text-gray-800"><i class="fas fa-chart-pie text-emerald-600 mr-2"></i> Ocupación por Tipo</h3>
+          <span class="text-xs text-gray-400">Habitaciones ocupadas</span>
+        </div>
+        <div style="height:260px;">
+          <canvas id="dashOcupacion"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Movimientos de Hoy: Check-ins y Check-outs -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Check-ins de Hoy -->
+      <div class="card">
+        <div class="card-header flex items-center justify-between">
+          <h3 class="font-display font-medium text-emerald-800"><i class="fas fa-sign-in-alt text-emerald-600 mr-2"></i> Entradas Previstas para Hoy</h3>
+          <span class="badge badge-success"><%= checkinsHoy ? checkinsHoy.length : 0 %></span>
+        </div>
+        <div class="overflow-x-auto">
+          <% if (checkinsHoy && checkinsHoy.length > 0) { %>
+            <table class="table w-full">
+              <thead>
+                <tr>
+                  <th>Huésped</th>
+                  <th>Cédula</th>
+                  <th>Hab.</th>
+                  <th class="text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% checkinsHoy.forEach(function(r) { %>
+                  <tr>
+                    <td class="font-medium"><%= r.nombre %> <%= r.apellido %></td>
+                    <td><%= r.numero_cedula %></td>
+                    <td><span class="badge badge-info font-bold"><%= r.hab_numero %></span></td>
+                    <td class="text-right">
+                      <a href="/reservas/<%= r.id %>" class="btn btn-primary btn-sm"><i class="fas fa-key mr-1"></i> Check-in</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } else { %>
+            <div class="text-center py-8 text-gray-400 text-sm">
+              <i class="fas fa-calendar-check text-2xl mb-2 text-gray-300 block"></i>
+              No hay entradas programadas para hoy
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Check-outs de Hoy -->
+      <div class="card">
+        <div class="card-header flex items-center justify-between">
+          <h3 class="font-display font-medium text-orange-800"><i class="fas fa-sign-out-alt text-orange-600 mr-2"></i> Salidas Previstas para Hoy</h3>
+          <span class="badge badge-warning"><%= checkoutsHoy ? checkoutsHoy.length : 0 %></span>
+        </div>
+        <div class="overflow-x-auto">
+          <% if (checkoutsHoy && checkoutsHoy.length > 0) { %>
+            <table class="table w-full">
+              <thead>
+                <tr>
+                  <th>Huésped</th>
+                  <th>Cédula</th>
+                  <th>Hab.</th>
+                  <th class="text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% checkoutsHoy.forEach(function(r) { %>
+                  <tr>
+                    <td class="font-medium"><%= r.nombre %> <%= r.apellido %></td>
+                    <td><%= r.numero_cedula %></td>
+                    <td><span class="badge badge-info font-bold"><%= r.hab_numero %></span></td>
+                    <td class="text-right">
+                      <a href="/reservas/<%= r.id %>" class="btn btn-warning btn-sm"><i class="fas fa-sign-out-alt mr-1"></i> Check-out</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } else { %>
+            <div class="text-center py-8 text-gray-400 text-sm">
+              <i class="fas fa-bed text-2xl mb-2 text-gray-300 block"></i>
+              No hay salidas programadas para hoy
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reservas Activas Recientes -->
+    <div class="card">
+      <div class="card-header flex items-center justify-between">
+        <h3 class="font-display font-medium"><i class="fas fa-bed text-primary-600 mr-2"></i> Estancias y Reservas Activas</h3>
+        <a href="/reservas" class="btn btn-outline btn-sm">Ver todas</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>Huésped</th>
+              <th>Cédula</th>
+              <th>Habitación</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th>Estado</th>
+              <th class="text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (reservasActivas && reservasActivas.length > 0) { %>
+              <% reservasActivas.forEach(function(r) { %>
+                <tr>
+                  <td class="font-medium"><%= r.nombre %> <%= r.apellido %></td>
+                  <td><%= r.numero_cedula %></td>
+                  <td><%= r.hab_numero %> <span class="badge badge-info text-xs"><%= r.hab_tipo %></span></td>
+                  <td><%= new Date(r.fecha_entrada).toLocaleDateString('es-CO') %></td>
+                  <td><%= new Date(r.fecha_salida).toLocaleDateString('es-CO') %></td>
+                  <td>
+                    <% if (r.estado === 'confirmada') { %><span class="badge badge-info">Confirmada</span><% } %>
+                    <% if (r.estado === 'checkin') { %><span class="badge badge-success">Hospedado</span><% } %>
+                  </td>
+                  <td class="text-right"><a href="/reservas/<%= r.id %>" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservas activas en este momento</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<script>
+// Gráfico de Ingresos Mensuales
+const mesesData = [<% (ingresosMensuales || []).forEach(function(m) { %>{ mes: '<%= m.mes %>', total: <%= m.total %> },<% }) %>];
+if (mesesData.length > 0) {
+  new Chart(document.getElementById('dashIngresos'), {
+    type: 'bar',
+    data: {
+      labels: mesesData.map(d => d.mes),
+      datasets: [{
+        label: 'Ingresos',
+        data: mesesData.map(d => d.total),
+        backgroundColor: '#1f4d3a',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => '$' + Number(v).toLocaleString('es-CO') }
+        }
+      }
+    }
+  });
+} else {
+  const ctx = document.getElementById('dashIngresos').getContext('2d');
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = '#9ca3af';
+  ctx.textAlign = 'center';
+  ctx.fillText('Sin facturas pagadas registradas', 150, 130);
+}
+
+// Gráfico de Ocupación
+const ocupacionData = [<% (ocupacionPorTipo || []).forEach(function(t) { %>{ tipo: '<%= t.tipo %>', ocupadas: <%= t.ocupadas || 0 %>, total: <%= t.total || 0 %> },<% }) %>];
+const ocupadasCount = ocupacionData.reduce((acc, d) => acc + d.ocupadas, 0);
+
+if (ocupacionData.length > 0 && ocupadasCount > 0) {
+  new Chart(document.getElementById('dashOcupacion'), {
+    type: 'doughnut',
+    data: {
+      labels: ocupacionData.map(d => d.tipo.charAt(0).toUpperCase() + d.tipo.slice(1)),
+      datasets: [{
+        data: ocupacionData.map(d => d.ocupadas),
+        backgroundColor: ['#1f4d3a','#059669','#d97706','#9333ea','#dc2626','#2563eb']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+} else {
+  new Chart(document.getElementById('dashOcupacion'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Disponibles'],
+      datasets: [{
+        data: [1],
+        backgroundColor: ['#e5e7eb']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+</script>
 
 <%- include('partials/footer') %>

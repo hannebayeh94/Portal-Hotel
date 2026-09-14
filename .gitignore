@@ -4,6 +4,7 @@ public/uploads/*
 !public/uploads/.gitkeep
 .env
 *.log
+spa.traineddata
 
 # Fotos reales de cédula usadas como fixtures de prueba durante el desarrollo del OCR.
 # No deben publicarse en el repositorio.
